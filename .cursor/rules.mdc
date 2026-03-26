@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+# OrderForge Cursor Rules
+
+## Project Overview
+- Solution name: OrderForge
+- Architecture: Clean Architecture + Domain-Driven Design (DDD) + CQRS
+- Language: C# with .NET 10
+- Frontend: Blazor WebAssembly
+- Database: PostgreSQL
+- Auth: Keycloak (OIDC + JWT)
+- Deployment: Docker + Dokploy on Hostinger
+
+## Core Principles (always follow)
+- Domain layer is king: Rich domain models, aggregates, value objects, domain events. No data access or external concerns in Domain.
+- CQRS: Separate commands and queries. Use MediatR for all application logic.
+- Use immutable value objects where appropriate.
+- FluentValidation for all command/query validation.
+- Never put business logic in controllers or infrastructure.
+- All public APIs must return consistent Result<T> or ProblemDetails.
+- Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. Order, Customer, ProductAggregate).
+- Tests: xUnit + FluentAssertions + NSubstitute. Test domain behaviour and handler logic only.
+
+## Coding Style
+- Use records for DTOs and value objects when possible.
+- Minimal APIs preferred in OrderForge.Api when simple.
+- Always add XML documentation for public members in Domain and Application.
+- Keep classes small and focused (Single Responsibility).
+
+## Docker & Environment
+- All services defined in docker-compose.yml
+- Never commit real secrets. Use .env and .env.example
+- Keycloak realm and client must be configured before API starts.
+
+When suggesting or editing code, always respect these rules.
