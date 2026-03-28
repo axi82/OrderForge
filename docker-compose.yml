@@ -1,3 +1,8 @@
+# Single Postgres holds both the app DB (POSTGRES_*) and Keycloak's DB (KEYCLOAK_DB_*).
+# If you already had a data volume from the old two-Postgres setup, run:
+#   docker compose down -v
+# then up again so init-keycloak.sh runs, or create the Keycloak role/DB manually.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,26 +12,14 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KEYCLOAK_DB_NAME: ${KEYCLOAK_DB_NAME}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - orderforge_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  keycloak-db:
-    image: postgres:16-alpine
-    container_name: orderforge-keycloak-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${KEYCLOAK_DB_USER}
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      POSTGRES_DB: ${KEYCLOAK_DB_NAME}
-    volumes:
-      - keycloak_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-keycloak.sh:/docker-entrypoint-initdb.d/10-init-keycloak.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
@@ -38,12 +31,12 @@ services:
     container_name: orderforge-keycloak
     restart: unless-stopped
     depends_on:
-      keycloak-db:
+      postgres:
         condition: service_healthy
     command: start-dev --http-port=8080 --hostname-strict=false
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB_NAME}
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
@@ -86,4 +79,3 @@ services:
 
 volumes:
   orderforge_pgdata:
-  keycloak_pgdata:
