@@ -45,12 +45,15 @@ services:
       - "${KEYCLOAK_PORT:-8080}:8080"
 
   # Seq: structured log ingestion + UI. Individual license (ACCEPT_EULA=Y). UI/API on container port 80 → host 5341.
+  # Seq 2025+ needs an initial admin password (SEQ_FIRSTRUN_ADMINPASSWORD) or SEQ_FIRSTRUN_NOAUTHENTICATION=true.
+  # Override with SEQ_ADMIN_PASSWORD in .env. If Seq previously failed mid-migration, remove volume orderforge_seqdata once.
   seq:
     image: datalust/seq:latest
     container_name: orderforge-seq
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD:-dev-seq-admin-change-me}
     ports:
       - "${SEQ_PORT:-5341}:80"
     volumes:
