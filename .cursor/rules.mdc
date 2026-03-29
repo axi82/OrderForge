@@ -2,7 +2,6 @@
 alwaysApply: true
 ---
 # OrderForge Cursor Rules
-
 ## Project Overview
 - Solution name: OrderForge
 - Architecture: Clean Architecture + Domain-Driven Design (DDD) + CQRS
@@ -11,6 +10,7 @@ alwaysApply: true
 - Database: PostgreSQL
 - Auth: Keycloak (OIDC + JWT)
 - Deployment: Docker + Dokploy on Hostinger
+- Logging: **Serilog** (structured logging) with **Seq** as the primary log server/dashboard
 
 ## Core Principles (always follow)
 - Domain layer is king: Rich domain models, aggregates, value objects, domain events. No data access or external concerns in Domain.
@@ -22,6 +22,24 @@ alwaysApply: true
 - Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. Order, Customer, ProductAggregate).
 - Tests: xUnit + FluentAssertions + NSubstitute. Test domain behaviour and handler logic only.
 
+## Logging Rules (Serilog + Seq)
+- Use **Serilog** for all logging throughout the solution.
+- Configure Serilog in `Program.cs` using the configuration provider (appsettings + environment variables).
+- Always enrich logs with:
+  - CorrelationId (for request tracing)
+  - OrganisationId / CustomerId (when available)
+  - UserId / Subject (from Keycloak JWT)
+  - OrderNumber, OrderId, etc. for domain events
+- Primary sink in Production and Development: **Seq** (self-hosted via Docker in docker-compose.yml)
+- Keep additional sinks: Console (for Docker logs) + File (rolling daily, mounted volume)
+- Minimum levels:
+  - Development: Debug
+  - Production: Information (override Microsoft.* and System.* to Warning)
+- Log structured data, not string concatenation. Prefer `Log.Information("Order {OrderNumber} placed for Organisation {OrganisationId}", orderNumber, organisationId)`
+- Never log sensitive data (passwords, full credit card details, etc.). Use Serilog masking where needed.
+- In Domain and Application layers, inject `ILogger<T>` and log at appropriate levels (Information for business events, Warning/Error for failures).
+- Seq dashboard should be accessible at port 5341 (configured in docker-compose).
+
 ## Coding Style
 - Use records for DTOs and value objects when possible.
 - Minimal APIs preferred in OrderForge.Api when simple.
@@ -29,8 +47,9 @@ alwaysApply: true
 - Keep classes small and focused (Single Responsibility).
 
 ## Docker & Environment
-- All services defined in docker-compose.yml
+- All services defined in docker-compose.yml (including seq service)
 - Never commit real secrets. Use .env and .env.example
 - Keycloak realm and client must be configured before API starts.
+- Seq container must use the free Individual license (1 user only) for now.
 
 When suggesting or editing code, always respect these rules.

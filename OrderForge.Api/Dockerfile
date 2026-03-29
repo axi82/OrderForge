@@ -23,4 +23,7 @@ WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 COPY --from=build /app/publish .
+USER root
+RUN mkdir -p /app/logs && chown app:app /app/logs
+USER app
 ENTRYPOINT ["dotnet", "OrderForge.Api.dll"]

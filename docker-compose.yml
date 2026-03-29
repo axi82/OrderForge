@@ -44,6 +44,18 @@ services:
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
 
+  # Seq: structured log ingestion + UI. Individual license (ACCEPT_EULA=Y). UI/API on container port 80 → host 5341.
+  seq:
+    image: datalust/seq:latest
+    container_name: orderforge-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - orderforge_seqdata:/data
+
   api:
     build:
       context: .
@@ -55,6 +67,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
+      seq:
+        condition: service_started
     ports:
       - "${API_PORT:-5280}:8080"
     environment:
@@ -65,6 +79,9 @@ services:
       Authentication__Audience: ${JWT_AUDIENCE}
       Cors__Origins__0: "http://localhost:${CLIENT_PORT}"
       Cors__Origins__1: "http://127.0.0.1:${CLIENT_PORT}"
+      Seq__ServerUrl: "http://seq:80"
+    volumes:
+      - orderforge_apilogs:/app/logs
 
   client:
     build:
@@ -79,3 +96,5 @@ services:
 
 volumes:
   orderforge_pgdata:
+  orderforge_seqdata:
+  orderforge_apilogs:

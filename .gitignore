@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# Serilog rolling file sink (local / non-Docker)
+OrderForge.Api/logs/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
