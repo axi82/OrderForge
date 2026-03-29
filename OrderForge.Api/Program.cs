@@ -1,7 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using OrderForge.Api.ExceptionHandling;
 using OrderForge.Api.Logging;
 using OrderForge.Application;
@@ -35,15 +36,41 @@ try
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+    var authSection = builder.Configuration.GetSection("Authentication");
+    var authority = authSection["Authority"];
+    var audience = authSection["Audience"];
+
     builder.Services.AddControllers();
-    builder.Services.AddOpenApi();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc(
+            "v1",
+            new OpenApiInfo
+            {
+                Title = "OrderForge API",
+                Version = "v1",
+                Description = "OrderForge HTTP API"
+            });
+
+        if (!string.IsNullOrWhiteSpace(authority))
+        {
+            options.AddSecurityDefinition(
+                "Bearer",
+                new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "JWT from your identity provider (e.g. Keycloak). Use Authorize and paste the raw token."
+                });
+        }
+    });
 
     builder.Services.AddMediatR(cfg =>
         cfg.RegisterServicesFromAssembly(typeof(ApplicationAssemblyMarker).Assembly));
 
-    var authSection = builder.Configuration.GetSection("Authentication");
-    var authority = authSection["Authority"];
-    var audience = authSection["Audience"];
     builder.Services.AddAuthorization();
 
     if (!string.IsNullOrWhiteSpace(authority))
@@ -84,12 +111,18 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
-        await db.Database.MigrateAsync();
-        await DevelopmentDataSeeder.SeedAsync(db);
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
+            await db.Database.MigrateAsync();
+            await DevelopmentDataSeeder.SeedAsync(db);
+        }
 
-        app.MapOpenApi();
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "OrderForge API v1");
+        });
     }
 
     app.UseHttpsRedirection();
