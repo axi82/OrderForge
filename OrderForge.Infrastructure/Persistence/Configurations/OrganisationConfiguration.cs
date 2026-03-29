@@ -23,7 +23,17 @@ public class OrganisationConfiguration : IEntityTypeConfiguration<Organisation>
 
         builder.Property(o => o.AccountNumber).HasMaxLength(20).HasColumnName("account_number");
 
-        builder.Property(o => o.Status).HasColumnName("status").IsRequired().HasMaxLength(20).HasDefaultValue("Active");
+        builder
+            .Property(o => o.OrganisationStatusId)
+            .HasColumnName("organisation_status_id")
+            .IsRequired()
+            .HasDefaultValue(OrganisationStatus.ActiveId);
+
+        builder
+            .HasOne(o => o.OrganisationStatus)
+            .WithMany()
+            .HasForeignKey(o => o.OrganisationStatusId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .Property(o => o.CreatedAt)

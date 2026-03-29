@@ -1,29 +1,33 @@
-# syntax=docker/dockerfile:1
+# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
-
-COPY OrderForge.sln ./
-COPY OrderForge.Domain/OrderForge.Domain.csproj OrderForge.Domain/
-COPY OrderForge.Application/OrderForge.Application.csproj OrderForge.Application/
-COPY OrderForge.Infrastructure/OrderForge.Infrastructure.csproj OrderForge.Infrastructure/
-COPY OrderForge.Api/OrderForge.Api.csproj OrderForge.Api/
-
-RUN dotnet restore OrderForge.Api/OrderForge.Api.csproj
-
-COPY OrderForge.Domain/ OrderForge.Domain/
-COPY OrderForge.Application/ OrderForge.Application/
-COPY OrderForge.Infrastructure/ OrderForge.Infrastructure/
-COPY OrderForge.Api/ OrderForge.Api/
-
-RUN dotnet publish OrderForge.Api/OrderForge.Api.csproj -c Release -o /app/publish --no-restore
-
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# This stage is used when running from VS in fast mode (Default for Debug configuration)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
-COPY --from=build /app/publish .
-USER root
-RUN mkdir -p /app/logs && chown app:app /app/logs
-USER app
+EXPOSE 8081
+
+
+# This stage is used to build the service project
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["OrderForge.Api/OrderForge.Api.csproj", "OrderForge.Api/"]
+COPY ["OrderForge.Application/OrderForge.Application.csproj", "OrderForge.Application/"]
+COPY ["OrderForge.Domain/OrderForge.Domain.csproj", "OrderForge.Domain/"]
+COPY ["OrderForge.Infrastructure/OrderForge.Infrastructure.csproj", "OrderForge.Infrastructure/"]
+RUN dotnet restore "./OrderForge.Api/OrderForge.Api.csproj"
+COPY . .
+WORKDIR "/src/OrderForge.Api"
+RUN dotnet build "./OrderForge.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# This stage is used to publish the service project to be copied to the final stage
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./OrderForge.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "OrderForge.Api.dll"]

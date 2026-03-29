@@ -1,29 +1,16 @@
 using FluentValidation;
 using MediatR;
 using OrderForge.Application.Common;
-using OrderForge.Domain.Organisations;
 
 namespace OrderForge.Application.Organisations;
 
-public sealed record UpdateOrganisationCommand(
-    int Id,
-    string Name,
-    string? TradingAs,
-    string? CompanyNumber,
-    string? VatNumber,
-    string? AccountNumber,
-    string Status) : IRequest<OrganisationDto>;
+public sealed record ChangeOrganisationStatusCommand(int Id, string Status) : IRequest<OrganisationDto>;
 
-public sealed class UpdateOrganisationCommandValidator : AbstractValidator<UpdateOrganisationCommand>
+public sealed class ChangeOrganisationStatusCommandValidator : AbstractValidator<ChangeOrganisationStatusCommand>
 {
-    public UpdateOrganisationCommandValidator()
+    public ChangeOrganisationStatusCommandValidator()
     {
         RuleFor(x => x.Id).GreaterThan(0);
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.TradingAs).MaximumLength(200);
-        RuleFor(x => x.CompanyNumber).MaximumLength(50);
-        RuleFor(x => x.VatNumber).MaximumLength(20);
-        RuleFor(x => x.AccountNumber).MaximumLength(20);
         RuleFor(x => x.Status)
             .NotEmpty()
             .Must(code => KnownOrganisationStatusCodes.All.Contains(code))
@@ -31,13 +18,15 @@ public sealed class UpdateOrganisationCommandValidator : AbstractValidator<Updat
     }
 }
 
-public sealed class UpdateOrganisationCommandHandler(
+public sealed class ChangeOrganisationStatusCommandHandler(
     IOrganisationRepository organisations,
     IOrganisationStatusLookup organisationStatuses,
     IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateOrganisationCommand, OrganisationDto>
+    : IRequestHandler<ChangeOrganisationStatusCommand, OrganisationDto>
 {
-    public async Task<OrganisationDto> Handle(UpdateOrganisationCommand request, CancellationToken cancellationToken)
+    public async Task<OrganisationDto> Handle(
+        ChangeOrganisationStatusCommand request,
+        CancellationToken cancellationToken)
     {
         var entity = await organisations.GetByIdAsync(request.Id, cancellationToken);
         if (entity is null)
@@ -51,11 +40,6 @@ public sealed class UpdateOrganisationCommandHandler(
             throw new InvalidOperationException($"Unknown organisation status code: {request.Status}");
         }
 
-        entity.Name = request.Name;
-        entity.TradingAs = request.TradingAs;
-        entity.CompanyNumber = request.CompanyNumber;
-        entity.VatNumber = request.VatNumber;
-        entity.AccountNumber = request.AccountNumber;
         entity.OrganisationStatusId = statusId.Value;
         entity.UpdatedAt = DateTime.UtcNow;
 

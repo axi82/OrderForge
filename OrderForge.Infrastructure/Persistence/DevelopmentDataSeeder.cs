@@ -24,7 +24,7 @@ public static class DevelopmentDataSeeder
                 CompanyNumber = "12345678",
                 VatNumber = "GB123456789",
                 AccountNumber = "DEV-001",
-                Status = "Active",
+                OrganisationStatusId = OrganisationStatus.ActiveId,
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -35,7 +35,7 @@ public static class DevelopmentDataSeeder
                 CompanyNumber = null,
                 VatNumber = null,
                 AccountNumber = "DEV-002",
-                Status = "Active",
+                OrganisationStatusId = OrganisationStatus.ActiveId,
                 CreatedAt = now,
                 UpdatedAt = now
             });

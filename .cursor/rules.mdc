@@ -22,6 +22,14 @@ alwaysApply: true
 - Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. Order, Customer, ProductAggregate).
 - Tests: xUnit + FluentAssertions + NSubstitute. Test domain behaviour and handler logic only.
 
+## Database & EF Core Rules
+- Use **pluralised table names** in PostgreSQL (e.g. `organisations`, `orders`, `order_items`, `products`, `users`).
+- Always apply **snake_case** naming convention for tables, columns, foreign keys, and indexes.
+- Use the `EFCore.NamingConventions` package (`modelBuilder.UseSnakeCaseNamingConvention()`) in `ApplicationDbContext.OnModelCreating()`.
+- Never use `[Table("...")]` attributes unless absolutely necessary for overrides.
+- DbSet properties in `DbContext` must be plural (e.g. `public DbSet<Organisation> Organisations { get; set; }`).
+- All database identifiers must follow UK English spelling (e.g. `organisation_id`, not `organization_id`).
+
 ## Logging Rules (Serilog + Seq)
 - Use **Serilog** for all logging throughout the solution.
 - Configure Serilog in `Program.cs` using the configuration provider (appsettings + environment variables).

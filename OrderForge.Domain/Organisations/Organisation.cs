@@ -16,8 +16,9 @@ public class Organisation
     /// <summary>Internal customer account reference.</summary>
     public string? AccountNumber { get; set; }
 
-    /// <summary>Active, Suspended, or Inactive.</summary>
-    public string Status { get; set; } = "Active";
+    public int OrganisationStatusId { get; set; }
+
+    public OrganisationStatus OrganisationStatus { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

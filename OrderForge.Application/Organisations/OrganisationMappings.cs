@@ -12,7 +12,7 @@ internal static class OrganisationMappings
             o.CompanyNumber,
             o.VatNumber,
             o.AccountNumber,
-            o.Status,
+            o.OrganisationStatus.Code,
             o.CreatedAt,
             o.UpdatedAt);
 }

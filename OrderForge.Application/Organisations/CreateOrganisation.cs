@@ -11,7 +11,7 @@ public sealed record CreateOrganisationCommand(
     string? CompanyNumber,
     string? VatNumber,
     string? AccountNumber,
-    string Status = "Active") : IRequest<OrganisationDto>;
+    string Status = KnownOrganisationStatusCodes.Active) : IRequest<OrganisationDto>;
 
 public sealed class CreateOrganisationCommandValidator : AbstractValidator<CreateOrganisationCommand>
 {
@@ -22,17 +22,27 @@ public sealed class CreateOrganisationCommandValidator : AbstractValidator<Creat
         RuleFor(x => x.CompanyNumber).MaximumLength(50);
         RuleFor(x => x.VatNumber).MaximumLength(20);
         RuleFor(x => x.AccountNumber).MaximumLength(20);
-        RuleFor(x => x.Status).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Status)
+            .NotEmpty()
+            .Must(code => KnownOrganisationStatusCodes.All.Contains(code))
+            .WithMessage($"Status must be one of: {string.Join(", ", KnownOrganisationStatusCodes.All)}.");
     }
 }
 
 public sealed class CreateOrganisationCommandHandler(
     IOrganisationRepository organisations,
+    IOrganisationStatusLookup organisationStatuses,
     IUnitOfWork unitOfWork)
     : IRequestHandler<CreateOrganisationCommand, OrganisationDto>
 {
     public async Task<OrganisationDto> Handle(CreateOrganisationCommand request, CancellationToken cancellationToken)
     {
+        var statusId = await organisationStatuses.GetIdForCodeAsync(request.Status, cancellationToken);
+        if (statusId is null)
+        {
+            throw new InvalidOperationException($"Unknown organisation status code: {request.Status}");
+        }
+
         var now = DateTime.UtcNow;
         var entity = new Organisation
         {
@@ -41,7 +51,7 @@ public sealed class CreateOrganisationCommandHandler(
             CompanyNumber = request.CompanyNumber,
             VatNumber = request.VatNumber,
             AccountNumber = request.AccountNumber,
-            Status = request.Status,
+            OrganisationStatusId = statusId.Value,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -49,6 +59,7 @@ public sealed class CreateOrganisationCommandHandler(
         await organisations.AddAsync(entity, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return entity.ToDto();
+        var reloaded = await organisations.GetByIdAsync(entity.Id, cancellationToken);
+        return reloaded!.ToDto();
     }
 }

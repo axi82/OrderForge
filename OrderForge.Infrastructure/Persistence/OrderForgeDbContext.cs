@@ -12,6 +12,8 @@ public class OrderForgeDbContext : DbContext
 
     public DbSet<Organisation> Organisations => Set<Organisation>();
 
+    public DbSet<OrganisationStatus> OrganisationStatuses => Set<OrganisationStatus>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderForgeDbContext).Assembly);

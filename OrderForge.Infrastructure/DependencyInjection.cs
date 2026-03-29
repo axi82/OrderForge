@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IOrganisationRepository, OrganisationRepository>();
         services.AddScoped<IRepository<Organisation>>(sp => sp.GetRequiredService<IOrganisationRepository>());
+        services.AddScoped<IOrganisationStatusLookup, OrganisationStatusLookup>();
 
         return services;
     }

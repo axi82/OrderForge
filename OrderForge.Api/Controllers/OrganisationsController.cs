@@ -16,12 +16,12 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
         return Ok(list);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{organisationId:int}")]
     [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrganisationDto>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrganisationDto>> GetById(int organisationId, CancellationToken cancellationToken)
     {
-        var dto = await sender.Send(new GetOrganisationByIdQuery(id), cancellationToken);
+        var dto = await sender.Send(new GetOrganisationByIdQuery(organisationId), cancellationToken);
         return dto is null ? NotFound() : Ok(dto);
     }
 
@@ -33,21 +33,21 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var created = await sender.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetById), new { organisationId = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{organisationId:int}")]
     [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrganisationDto>> Update(
-        int id,
+        int organisationId,
         [FromBody] UpdateOrganisationRequest body,
         CancellationToken cancellationToken)
     {
         var updated = await sender.Send(
             new UpdateOrganisationCommand(
-                id,
+                organisationId,
                 body.Name,
                 body.TradingAs,
                 body.CompanyNumber,
@@ -58,15 +58,35 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
         return Ok(updated);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpPatch("{organisationId:int}/status")]
+    [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrganisationDto>> ChangeStatus(
+        int organisationId,
+        [FromBody] ChangeOrganisationStatusRequest body,
+        CancellationToken cancellationToken)
+    {
+        var updated = await sender.Send(
+            new ChangeOrganisationStatusCommand(organisationId, body.Status),
+            cancellationToken);
+        return Ok(updated);
+    }
+
+    [HttpDelete("{organisationId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(int organisationId, CancellationToken cancellationToken)
     {
-        await sender.Send(new DeleteOrganisationCommand(id), cancellationToken);
+        await sender.Send(new DeleteOrganisationCommand(organisationId), cancellationToken);
         return NoContent();
     }
+}
+
+public sealed class ChangeOrganisationStatusRequest
+{
+    public string Status { get; set; } = string.Empty;
 }
 
 public sealed class UpdateOrganisationRequest
