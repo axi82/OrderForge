@@ -65,7 +65,8 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
-    db.Database.Migrate();
+    await db.Database.MigrateAsync();
+    await DevelopmentDataSeeder.SeedAsync(db);
 
     app.MapOpenApi();
 }
