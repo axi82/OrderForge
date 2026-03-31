@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>1395bd78-afd7-43d6-94d9-082073eea3ed</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OrderForge.Application\OrderForge.Application.csproj" />
     <ProjectReference Include="..\OrderForge.Infrastructure\OrderForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\OrderForge.ServiceDefaults\OrderForge.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

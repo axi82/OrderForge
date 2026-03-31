@@ -1,0 +1,288 @@
+@page "/organisations-test"
+@inject IOrganisationsApiClient OrganisationsApi
+@inject IJSRuntime Js
+
+<PageTitle>Organisations test</PageTitle>
+
+<h1 class="mb-3">Organisations <span class="text-muted fs-5">(test page)</span></h1>
+
+<p class="text-muted small">
+    API base URL comes from <code>wwwroot/appsettings.json</code> → <code>ApiBaseUrl</code> (default <code>http://localhost:5280/</code>).
+    Ensure the API allows this origin in CORS and is running.
+</p>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <pre class="mb-0 small text-wrap">@errorMessage</pre>
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-header">
+        @(editingId is null ? "Add organisation" : $"Edit organisation #{editingId}")
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label">Name *</label>
+                <input class="form-control" @bind="form.Name" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Trading as</label>
+                <input class="form-control" @bind="form.TradingAs" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Company number</label>
+                <input class="form-control" @bind="form.CompanyNumber" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">VAT number</label>
+                <input class="form-control" @bind="form.VatNumber" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Account number</label>
+                <input class="form-control" @bind="form.AccountNumber" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Status *</label>
+                <select class="form-select" @bind="form.Status">
+                    @foreach (var s in StatusOptions)
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button type="button" class="btn btn-primary" disabled="@busy" @onclick="SaveAsync">
+                @(editingId is null ? "Create" : "Save changes")
+            </button>
+            @if (editingId is not null)
+            {
+                <button type="button" class="btn btn-outline-secondary" disabled="@busy" @onclick="CancelEdit">Cancel edit</button>
+            }
+        </div>
+    </div>
+</div>
+
+@if (loadingList)
+{
+    <p class="text-muted">Loading list…</p>
+}
+else if (items.Count == 0)
+{
+    <p class="text-muted">No organisations returned.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Trading as</th>
+                    <th>Status</th>
+                    <th>Account #</th>
+                    <th>Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in items)
+                {
+                    <tr>
+                        <td>@o.Id</td>
+                        <td>@o.Name</td>
+                        <td>@(o.TradingAs ?? "—")</td>
+                        <td><span class="badge bg-secondary">@o.Status</span></td>
+                        <td>@(o.AccountNumber ?? "—")</td>
+                        <td class="small text-muted">@o.UpdatedAt.ToLocalTime().ToString("g")</td>
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" disabled="@busy" @onclick="() => StartEdit(o)">Edit</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" disabled="@busy" @onclick="() => DeleteAsync(o)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private static readonly string[] StatusOptions = ["Active", "Inactive", "Unknown"];
+
+    private readonly OrganisationFormState form = new();
+
+    private List<OrganisationDto> items = [];
+
+    private int? editingId;
+
+    private bool loadingList = true;
+
+    private bool busy;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshListAsync();
+    }
+
+    private async Task RefreshListAsync()
+    {
+        loadingList = true;
+        errorMessage = null;
+        try
+        {
+            items = (await OrganisationsApi.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = FormatError(ex);
+            items = [];
+        }
+        finally
+        {
+            loadingList = false;
+            StateHasChanged();
+        }
+    }
+
+    private void StartEdit(OrganisationDto o)
+    {
+        editingId = o.Id;
+        form.Name = o.Name;
+        form.TradingAs = o.TradingAs;
+        form.CompanyNumber = o.CompanyNumber;
+        form.VatNumber = o.VatNumber;
+        form.AccountNumber = o.AccountNumber;
+        form.Status = o.Status;
+        errorMessage = null;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        form.Clear();
+        errorMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(form.Name))
+        {
+            errorMessage = "Name is required.";
+            return;
+        }
+
+        busy = true;
+        errorMessage = null;
+        try
+        {
+            if (editingId is null)
+            {
+                var req = new CreateOrganisationRequest
+                {
+                    Name = form.Name.Trim(),
+                    TradingAs = NullIfEmpty(form.TradingAs),
+                    CompanyNumber = NullIfEmpty(form.CompanyNumber),
+                    VatNumber = NullIfEmpty(form.VatNumber),
+                    AccountNumber = NullIfEmpty(form.AccountNumber),
+                    Status = form.Status
+                };
+                await OrganisationsApi.CreateAsync(req);
+            }
+            else
+            {
+                var req = new UpdateOrganisationRequest
+                {
+                    Name = form.Name.Trim(),
+                    TradingAs = NullIfEmpty(form.TradingAs),
+                    CompanyNumber = NullIfEmpty(form.CompanyNumber),
+                    VatNumber = NullIfEmpty(form.VatNumber),
+                    AccountNumber = NullIfEmpty(form.AccountNumber),
+                    Status = form.Status
+                };
+                await OrganisationsApi.UpdateAsync(editingId.Value, req);
+            }
+
+            CancelEdit();
+            await RefreshListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = FormatError(ex);
+        }
+        finally
+        {
+            busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteAsync(OrganisationDto o)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", $"Delete organisation \"{o.Name}\" (id {o.Id})?"))
+        {
+            return;
+        }
+
+        busy = true;
+        errorMessage = null;
+        try
+        {
+            await OrganisationsApi.DeleteAsync(o.Id);
+            if (editingId == o.Id)
+            {
+                CancelEdit();
+            }
+
+            await RefreshListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = FormatError(ex);
+        }
+        finally
+        {
+            busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private static string FormatError(Exception ex) =>
+        ex switch
+        {
+            OrganisationsApiException api => api.ResponseBody ?? api.Message,
+            _ => ex.Message
+        };
+
+    private sealed class OrganisationFormState
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string? TradingAs { get; set; }
+
+        public string? CompanyNumber { get; set; }
+
+        public string? VatNumber { get; set; }
+
+        public string? AccountNumber { get; set; }
+
+        public string Status { get; set; } = "Active";
+
+        public void Clear()
+        {
+            Name = string.Empty;
+            TradingAs = null;
+            CompanyNumber = null;
+            VatNumber = null;
+            AccountNumber = null;
+            Status = "Active";
+        }
+    }
+}

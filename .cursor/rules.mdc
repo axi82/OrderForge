@@ -2,6 +2,7 @@
 alwaysApply: true
 ---
 # OrderForge Cursor Rules
+
 ## Project Overview
 - Solution name: OrderForge
 - Architecture: Clean Architecture + Domain-Driven Design (DDD) + CQRS
@@ -12,15 +13,58 @@ alwaysApply: true
 - Deployment: Docker + Dokploy on Hostinger
 - Logging: **Serilog** (structured logging) with **Seq** as the primary log server/dashboard
 
+## Development Workflow
+- Default local development mode must **separate infrastructure from application services**.
+- **Infrastructure services** run in Docker.
+- **Application services** run locally from the IDE or CLI unless explicitly testing containerised application hosting.
+- The normal day-to-day developer workflow is:
+  - PostgreSQL in Docker
+  - Keycloak in Docker
+  - Seq in Docker
+  - OrderForge.Api run locally
+  - OrderForge.Client run locally
+- Full application containerisation is allowed for integration testing, deployment validation, and production-like smoke testing, but it is **not** the default developer experience.
+- Do not assume Visual Studio or container debugging is the preferred path for frontend and API development.
+- Optimise for fast local debugging, simple breakpoints, and short edit/run/test loops.
+
+## Docker Separation Rules
+- Infrastructure must be separated from application services.
+- Infrastructure includes:
+  - PostgreSQL
+  - Keycloak
+  - Seq
+- Application services include:
+  - OrderForge.Api
+  - OrderForge.Client
+- Prefer separate compose files for clarity:
+  - `docker-compose.infrastructure.yml` for infrastructure only
+  - `docker-compose.full.yml` or an override file for full stack container runs when needed
+- Avoid coupling local development of OrderForge.Api and OrderForge.Client to Docker unless there is a specific need to test container behaviour.
+- If Dockerfiles exist for application projects, treat them as deployment/integration assets first, not the default local development model.
+- Keep container port mappings, volumes, and environment variables explicit and predictable.
+- Seq dashboard should be accessible on port `5341`.
+- PostgreSQL and Keycloak must be reachable from locally running applications via stable local endpoints.
+
 ## Core Principles (always follow)
 - Domain layer is king: Rich domain models, aggregates, value objects, domain events. No data access or external concerns in Domain.
 - CQRS: Separate commands and queries. Use MediatR for all application logic.
 - Use immutable value objects where appropriate.
 - FluentValidation for all command/query validation.
 - Never put business logic in controllers or infrastructure.
-- All public APIs must return consistent Result<T> or ProblemDetails.
-- Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. Order, Customer, ProductAggregate).
+- All public APIs must return consistent `Result<T>` or `ProblemDetails`.
+- Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. `Order`, `Customer`, `ProductAggregate`).
 - Tests: xUnit + FluentAssertions + NSubstitute. Test domain behaviour and handler logic only.
+
+## Architecture Rules
+- Domain contains entities, aggregates, value objects, domain services, domain events, and domain rules only.
+- Application contains use cases, commands, queries, handlers, validators, interfaces, and DTOs.
+- Infrastructure contains data access, external integrations, identity adapters, messaging, logging configuration, and file/storage concerns.
+- API contains HTTP endpoints, middleware, authentication wiring, DI composition, and host configuration.
+- Client contains UI, view models, typed HTTP clients, auth state handling, and presentation concerns only.
+- Never allow Infrastructure dependencies to leak into Domain.
+- Application may depend on Domain, but never on Infrastructure.
+- Infrastructure implements interfaces defined by Application.
+- API is the composition root for backend services.
 
 ## Database & EF Core Rules
 - Use **pluralised table names** in PostgreSQL (e.g. `organisations`, `orders`, `order_items`, `products`, `users`).
@@ -38,26 +82,48 @@ alwaysApply: true
   - OrganisationId / CustomerId (when available)
   - UserId / Subject (from Keycloak JWT)
   - OrderNumber, OrderId, etc. for domain events
-- Primary sink in Production and Development: **Seq** (self-hosted via Docker in docker-compose.yml)
-- Keep additional sinks: Console (for Docker logs) + File (rolling daily, mounted volume)
+- Primary sink in Production and Development: **Seq**
+- Keep additional sinks: Console (for container logs and local diagnostics) + File (rolling daily, mounted volume where applicable)
 - Minimum levels:
   - Development: Debug
-  - Production: Information (override Microsoft.* and System.* to Warning)
-- Log structured data, not string concatenation. Prefer `Log.Information("Order {OrderNumber} placed for Organisation {OrganisationId}", orderNumber, organisationId)`
-- Never log sensitive data (passwords, full credit card details, etc.). Use Serilog masking where needed.
-- In Domain and Application layers, inject `ILogger<T>` and log at appropriate levels (Information for business events, Warning/Error for failures).
-- Seq dashboard should be accessible at port 5341 (configured in docker-compose).
+  - Production: Information
+  - Override `Microsoft.*` and `System.*` to Warning in Production
+- Log structured data, not string concatenation. Prefer:
+  - `Log.Information("Order {OrderNumber} placed for Organisation {OrganisationId}", orderNumber, organisationId)`
+- Never log sensitive data (passwords, tokens, full credit card details, etc.).
+- In Domain and Application layers, inject `ILogger<T>` only where logging is genuinely needed and keep logging focused on meaningful events and failures.
+
+## Authentication & Environment Rules
+- Keycloak is the identity provider for local and deployed environments.
+- Keycloak realm and client configuration must exist before authentication-dependent backend flows are exercised.
+- Local applications must read configuration from appsettings plus environment variables.
+- Never commit real secrets. Use `.env`, user secrets, or environment-specific secret stores.
+- Use stable local URLs for infrastructure dependencies so local projects and containers can be switched with minimal config changes.
 
 ## Coding Style
-- Use records for DTOs and value objects when possible.
-- Minimal APIs preferred in OrderForge.Api when simple.
+- Use records for DTOs and value objects where appropriate.
+- Minimal APIs are preferred in `OrderForge.Api` when the endpoint is simple.
 - Always add XML documentation for public members in Domain and Application.
-- Keep classes small and focused (Single Responsibility).
+- Keep classes small and focused (Single Responsibility Principle).
+- Prefer explicit, intention-revealing names over abbreviations.
+- Keep frontend and backend concerns clearly separated.
 
-## Docker & Environment
-- All services defined in docker-compose.yml (including seq service)
-- Never commit real secrets. Use .env and .env.example
-- Keycloak realm and client must be configured before API starts.
-- Seq container must use the free Individual license (1 user only) for now.
+## Testing Rules
+- Use xUnit + FluentAssertions + NSubstitute.
+- Prioritise tests for:
+  - Domain behaviour
+  - Command/query handlers
+  - Validation
+  - Important application workflows
+- Do not over-focus on framework plumbing or trivial tests.
+- Integration tests may use containerised infrastructure where useful, but keep unit and handler tests fast and local.
+
+## Deployment Rules
+- Production deployment may run fully containerised.
+- Local development does not need to mirror production container-for-container if that harms developer productivity.
+- Dockerfiles for application services must remain valid for CI/CD and deployment even if developers usually run the applications locally.
+- When suggesting changes, prefer solutions that preserve both:
+  - a fast local developer workflow
+  - a clean deployment path
 
 When suggesting or editing code, always respect these rules.

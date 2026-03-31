@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# Final stage is "final" (nginx + wwwroot). Visual Studio must use ContainerDevelopmentMode=Regular so the full image is built, not Fast mode on the SDK stage only.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src

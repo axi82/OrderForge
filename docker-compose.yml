@@ -3,6 +3,8 @@
 #   docker compose down -v
 # then up again so init-keycloak.sh runs, or create the Keycloak role/DB manually.
 
+name: orderforge
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -87,14 +89,19 @@ services:
     volumes:
       - orderforge_apilogs:/app/logs
 
-  client:
+  # Name must match Visual Studio (OrderForge.Client → orderforge.client) for compose tooling + launchSettings.
+  orderforge.client:
     build:
       context: .
       dockerfile: OrderForge.Client/Dockerfile
+      target: final
     container_name: orderforge-client
     restart: unless-stopped
     depends_on:
       - orderforge.api
+    environment:
+      ASPNETCORE_URLS: http://+:80
+      ASPNETCORE_HTTP_PORTS: 80
     ports:
       - "${CLIENT_PORT:-5281}:80"
 

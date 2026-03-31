@@ -7,6 +7,7 @@ using OrderForge.Api.ExceptionHandling;
 using OrderForge.Api.Logging;
 using OrderForge.Application;
 using OrderForge.Infrastructure;
+using OrderForge.ServiceDefaults;
 using OrderForge.Infrastructure.Persistence;
 using Serilog;
 
@@ -15,6 +16,13 @@ Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger()
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.AddServiceDefaults();
+
+    var runUnderAspire = string.Equals(
+        builder.Configuration["OrderForge:RunUnderAspire"],
+        "true",
+        StringComparison.OrdinalIgnoreCase);
 
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     {
@@ -91,7 +99,16 @@ try
     }
 
     var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-    if (corsOrigins.Length > 0)
+    if (runUnderAspire)
+    {
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(
+                "Default",
+                policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+        });
+    }
+    else if (corsOrigins.Length > 0)
     {
         builder.Services.AddCors(options =>
         {
@@ -109,14 +126,13 @@ try
     app.UseExceptionHandler();
     app.UseMiddleware<CorrelationIdMiddleware>();
 
-    if (app.Environment.IsDevelopment())
+    if (runUnderAspire || app.Environment.IsDevelopment())
     {
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
-            await db.Database.MigrateAsync();
-            await DevelopmentDataSeeder.SeedAsync(db);
-        }
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
+        await db.Database.MigrateAsync();
+        await DevelopmentDataSeeder.SeedAsync(db);
+        
 
         app.UseSwagger();
         app.UseSwaggerUI(options =>
@@ -125,9 +141,12 @@ try
         });
     }
 
-    app.UseHttpsRedirection();
+    if (!runUnderAspire)
+    {
+        app.UseHttpsRedirection();
+    }
 
-    if (corsOrigins.Length > 0)
+    if (runUnderAspire || corsOrigins.Length > 0)
     {
         app.UseCors("Default");
     }
@@ -149,6 +168,7 @@ try
         app.UseAuthorization();
     }
 
+    app.MapDefaultEndpoints();
     app.MapControllers();
 
     Log.Information("OrderForge API starting ({Environment})", app.Environment.EnvironmentName);

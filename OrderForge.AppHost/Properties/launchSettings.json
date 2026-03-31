@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "OrderForge.AppHost": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:17132;http://localhost:15132",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21273",
+        "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22223"
+      }
+    }
+  }
+}
