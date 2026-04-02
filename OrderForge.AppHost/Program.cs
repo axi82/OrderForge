@@ -11,19 +11,28 @@ var postgres = builder.AddPostgres("postgres", postgresUser, postgresPassword, p
 
 var orderforgeDb = postgres.AddDatabase("orderforge");
 
-// Seq
+// Seq: persist /data so the admin user and password survive container recreation.
+// Default login is username "admin" and this password (override via user secrets / Aspire parameters UI).
+var seqAdminPassword = builder.AddParameter("seq-admin-password", "dev-seq-admin-change-me", secret: true);
 var seq = builder
-    .AddSeq("seq")
-    .WithEnvironment("ACCEPT_EULA", "Y")
-    .WithEnvironment("SEQ_FIRSTRUN_ADMINPASSWORD", "dev-seq-admin-change-me")
+    .AddSeq("seq", seqAdminPassword)
+    .WithDataVolume("orderforge-seq-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .ExcludeFromManifest();
 
-// Keycloak defaults to host port 8080; the API also uses 8080 below — that causes "address already in use".
-// Map Keycloak to 8081 on the host (container still listens on 8080 inside the image).
-var keycloak = builder.AddKeycloakContainer("keycloak", port: 8081)
-    .WithEnvironment("KEYCLOAK_ADMIN", "admin")
-    .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
+// Keycloak 26+ bootstraps a temporary master-realm admin; first login shows "Update Password" by design.
+// Persist /opt/keycloak/data so after you submit that form once, restarts reuse the same admin (no repeat prompt).
+// Credentials match docker-compose (KC_BOOTSTRAP_*); KEYCLOAK_* is still set by AddKeycloakContainer from parameters.
+var keycloakAdmin = builder.AddParameter("keycloak-admin", "admin", secret: false);
+var keycloakAdminPassword = builder.AddParameter("keycloak-admin-password", "admin", secret: true);
+var keycloak = builder.AddKeycloakContainer(
+        "keycloak",
+        userName: keycloakAdmin,
+        password: keycloakAdminPassword,
+        port: 8081)
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdmin)
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
+    .WithDataVolume("orderforge-keycloak-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .ExcludeFromManifest();
 
@@ -50,7 +59,9 @@ var api = builder
 var web = builder
     .AddProject<Projects.OrderForge_Client>("web", launchProfileName: null)
     .WithReference(api)
+    .WaitFor(api)    
     .WithEnvironment("ApiBaseUrl", $"{api.GetEndpoint("api-public")}/")
     .WithHttpEndpoint(port: 4200, name: "web-public", isProxied: false);
+
 
 builder.Build().Run();
