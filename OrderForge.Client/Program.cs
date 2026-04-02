@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using OrderForge.Client;
 using OrderForge.Client.Services;
@@ -14,7 +15,32 @@ if (string.IsNullOrWhiteSpace(apiBase))
 }
 
 var apiUri = new Uri(apiBase.TrimEnd('/') + "/", UriKind.Absolute);
-builder.Services.AddScoped(_ => new HttpClient { BaseAddress = apiUri });
-builder.Services.AddScoped<IOrganisationsApiClient, OrganisationsApiClient>();
+
+builder.Services.AddAuthorizationCore();
+builder.Services.AddOidcAuthentication(options =>
+{
+    builder.Configuration.Bind("Oidc", options.ProviderOptions);
+    options.ProviderOptions.ResponseType = "code";
+    options.AuthenticationPaths.LogInFailedPath = "authentication/login-failed";
+
+    var authority = options.ProviderOptions.Authority?.TrimEnd('/');
+    if (!string.IsNullOrEmpty(authority))
+    {
+        options.ProviderOptions.Authority = authority;
+    }
+
+    if (!options.ProviderOptions.DefaultScopes.Contains("profile"))
+    {
+        options.ProviderOptions.DefaultScopes.Add("profile");
+    }
+
+    if (!options.ProviderOptions.DefaultScopes.Contains("email"))
+    {
+        options.ProviderOptions.DefaultScopes.Add("email");
+    }
+});
+
+builder.Services.AddHttpClient<IOrganisationsApiClient, OrganisationsApiClient>(client => client.BaseAddress = apiUri)
+    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
 
 await builder.Build().RunAsync();

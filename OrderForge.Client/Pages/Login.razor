@@ -1,0 +1,47 @@
+@page "/login"
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+
+<PageTitle>Sign in</PageTitle>
+
+<h1>Sign in</h1>
+
+<p class="text-muted">
+    You will be redirected to Keycloak to sign in with your email and password.
+</p>
+
+<p class="small text-muted">
+    <strong>Remember me:</strong> use the <em>Remember me</em> checkbox on the Keycloak sign-in page for a longer session (realm also has SSO timeouts — see AppHost Keycloak comments).
+</p>
+
+<div class="d-flex flex-column gap-2 align-items-start">
+    <button type="button" class="btn btn-primary" @onclick="BeginLogin">
+        Sign in
+    </button>
+    @if (!string.IsNullOrEmpty(forgotPasswordUrl))
+    {
+        <a href="@forgotPasswordUrl" target="_blank" rel="noopener noreferrer">Forgot password?</a>
+    }
+</div>
+
+@code {
+    private string? forgotPasswordUrl;
+
+    protected override void OnInitialized()
+    {
+        var baseUrl = Configuration["Keycloak:AuthServerUrl"]?.TrimEnd('/');
+        var realm = Configuration["Keycloak:Realm"];
+        var clientId = Configuration["Keycloak:ForgotPasswordClientId"] ?? "orderforge-blazor";
+        if (!string.IsNullOrEmpty(baseUrl) && !string.IsNullOrEmpty(realm))
+        {
+            var redirect = Uri.EscapeDataString(Navigation.BaseUri.TrimEnd('/'));
+            forgotPasswordUrl =
+                $"{baseUrl}/realms/{realm}/login-actions/reset-credentials?client_id={Uri.EscapeDataString(clientId)}&redirect_uri={redirect}";
+        }
+    }
+
+    private void BeginLogin()
+    {
+        Navigation.NavigateTo("authentication/login?returnUrl=" + Uri.EscapeDataString("dashboard"));
+    }
+}

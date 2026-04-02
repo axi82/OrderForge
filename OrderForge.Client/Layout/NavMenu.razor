@@ -15,14 +15,41 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
+            <NavLink class="nav-link" href="dashboard">
+                <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
             <NavLink class="nav-link" href="organisations-test">
                 <span class="bi bi-building" aria-hidden="true"></span> Organisations test
             </NavLink>
+        </div>
+        <div class="nav-item px-3 border-top border-secondary mt-2 pt-2">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="small text-white-50 px-3 mb-1 text-truncate" title="@UserEmail(context)">
+                        @UserEmail(context)
+                    </div>
+                    <NavLink class="nav-link" href="authentication/logout">
+                        Sign out
+                    </NavLink>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="nav-link" href="login">
+                        Sign in
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
     </nav>
 </div>
 
 @code {
+    private static string? UserEmail(AuthenticationState context) =>
+        context.User.FindFirst("email")?.Value
+        ?? context.User.FindFirst("preferred_username")?.Value
+        ?? context.User.Identity?.Name;
+
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;

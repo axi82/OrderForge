@@ -1,0 +1,84 @@
+{
+  "realm": "orderforge",
+  "enabled": true,
+  "displayName": "OrderForge",
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": false,
+  "rememberMe": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "clients": [
+    {
+      "clientId": "orderforge-api",
+      "name": "OrderForge API",
+      "description": "Resource server audience for JWT validation",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "bearerOnly": false,
+      "attributes": {}
+    },
+    {
+      "clientId": "orderforge-blazor",
+      "name": "OrderForge Blazor WASM",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "https://localhost:7245/*",
+        "http://localhost:5201/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "https://localhost:7245",
+        "http://localhost:5201"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-orderforge-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "orderforge-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "buyer@example.com",
+      "enabled": true,
+      "email": "buyer@example.com",
+      "emailVerified": true,
+      "firstName": "Wholesale",
+      "lastName": "Customer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ChangeMe1!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 @page "/organisations-test"
+@attribute [Authorize]
 @inject IOrganisationsApiClient OrganisationsApi
 @inject IJSRuntime Js
 
@@ -7,8 +8,7 @@
 <h1 class="mb-3">Organisations <span class="text-muted fs-5">(test page)</span></h1>
 
 <p class="text-muted small">
-    API base URL comes from <code>wwwroot/appsettings.json</code> → <code>ApiBaseUrl</code> (default <code>http://localhost:5280/</code>).
-    Ensure the API allows this origin in CORS and is running.
+    API base URL comes from configuration → <code>ApiBaseUrl</code> (Aspire sets this for you). You must be signed in; requests send a JWT Bearer token.
 </p>
 
 @if (!string.IsNullOrEmpty(errorMessage))

@@ -21,4 +21,10 @@
     <ProjectReference Include="..\OrderForge.Client\OrderForge.Client.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Keycloak\**\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
