@@ -1,0 +1,30 @@
+---
+description: "Order Forge Supplier 1 : Many Customers role and organization model"
+alwaysApply: true
+---
+
+Core architecture rule – Supplier 1 : Many Customers:
+
+Roles (Keycloak Realm Roles):
+- SupplierAdmin → Full access: manage products, all customer companies, users, pricing, global settings
+- SupplierViewer → Read-only across the entire portal
+- Customer → Browse products with own negotiated pricing, place orders, view own history
+- CompanyAdmin → Manage users and addresses within their own customer company only
+- OrderApprover → (Phase 2) Approve large orders within their company
+
+Organizations / Groups:
+- Each Customer Company = one Keycloak Organization (or Group)
+- Supplier users have no Organization membership (only Supplier* roles)
+- Every query and business operation must respect tenancy:
+  - SupplierAdmin sees everything (no filter)
+  - Customer / CompanyAdmin users are filtered by their organization_id / company_id
+
+In EF Core / PostgreSQL:
+- Link Keycloak user ID + organization membership to our Company entity
+- Apply row-level filtering automatically based on claims
+- Customer-specific pricing and orders must always be scoped to the user's Company
+
+When generating code:
+- Always enforce least privilege
+- Never allow a Customer user to see another company's data
+- Use claims transformation to inject company context into ClaimsPrincipal

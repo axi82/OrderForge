@@ -1,0 +1,15 @@
+---
+description: "Order Forge test users and sample data for development"
+alwaysApply: false
+---
+
+Test data from Keycloak realm (imported via order-forge-realm.json):
+
+- Supplier Admin user: username "supplier-admin" (or your chosen email), role: SupplierAdmin
+- Sample Customer Organization: "Test Customer Company"
+- Sample Customer user: belongs to "Test Customer Company", role: Customer (or CompanyAdmin)
+
+When testing login or features:
+- Use these accounts to verify Supplier vs Customer behavior
+- SupplierAdmin should see global product management and all orders
+- Customer users should only see their own negotiated prices and orders

@@ -2,6 +2,7 @@ using Aspire.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Canonical realm: Keycloak/orderforge-realm.json (CLI export). Commit updates here; treat as dev-only (may include client secrets).
 var keycloakRealmImportPath = Path.Combine(AppContext.BaseDirectory, "Keycloak", "orderforge-realm.json");
 
 // Postgres - using parameters (recommended way)
@@ -40,6 +41,9 @@ var keycloakBuilder = builder.AddKeycloakContainer(
 
 // Remember-me: realm JSON enables Keycloak login "Remember me" + SSO session idle/max (seconds). Tune under Keycloak Admin → Realm settings → Sessions / Tokens.
 // Optional: add offline_access scope on the Blazor client and persist refresh tokens only if you implement custom token storage (stock WASM auth uses browser storage as-is).
+// Startup --import-realm runs only if the realm is not already in the Keycloak DB. With a persistent volume, changing
+// orderforge-realm.json alone does not refresh Keycloak. To restore from git: stop AppHost, run scripts/reset-keycloak-dev.ps1
+// (or docker volume rm orderforge-keycloak-data), then start again.
 var keycloak = File.Exists(keycloakRealmImportPath)
     ? keycloakBuilder.WithImport(keycloakRealmImportPath)
     : keycloakBuilder;
@@ -63,9 +67,10 @@ var api = builder
     .WithEnvironment("OrderForge__RunUnderAspire", "true")
     .WithHttpEndpoint(port: 8080, name: "api-public", isProxied: false);
 
-// Web: same rule — do not name a second endpoint "http" on this project resource.
+// Web: use no launch profile here so Aspire does not add profile URLs *and* a separate proxied port (two browsers / two URLs).
+// Single fixed endpoint on 4200 only; Client launchSettings "http" profile stays for standalone dotnet run.
 var web = builder
-    .AddProject<Projects.OrderForge_Client>("web", launchProfileName: "http")
+    .AddProject<Projects.OrderForge_Client>("web", launchProfileName: null)
     .WithReference(api)
     .WaitFor(api)
     .WithEnvironment("ApiBaseUrl", $"{api.GetEndpoint("api-public")}/")
@@ -73,8 +78,8 @@ var web = builder
     .WithEnvironment("Oidc__ClientId", "orderforge-blazor")
     .WithEnvironment("Keycloak__AuthServerUrl", $"{keycloak.GetEndpoint("http")}")
     .WithEnvironment("Keycloak__Realm", keycloakRealmName)
-    .WithEnvironment("Keycloak__ForgotPasswordClientId", "orderforge-blazor");
-    //.WithHttpEndpoint(port: 4200, name: "web-public", isProxied: false);
+    .WithEnvironment("Keycloak__ForgotPasswordClientId", "orderforge-blazor")
+    .WithHttpEndpoint(port: 4200, name: "http", isProxied: false);
 
 
 builder.Build().Run();
