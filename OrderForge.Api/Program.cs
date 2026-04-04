@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -80,9 +81,13 @@ try
         cfg.RegisterServicesFromAssembly(typeof(ApplicationAssemblyMarker).Assembly));
 
     builder.Services.AddAuthorization();
+    builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationFailureLoggingMiddlewareResultHandler>();
 
     if (!string.IsNullOrWhiteSpace(authority))
     {
+        var includeJwtErrorDetails = authSection.GetValue<bool?>("IncludeErrorDetails")
+            ?? builder.Environment.IsDevelopment();
+
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -90,11 +95,42 @@ try
                 options.Audience = audience;
                 // Keycloak in Aspire/docker-compose uses http://; JwtBearer defaults to requiring HTTPS metadata.
                 options.RequireHttpsMetadata = authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+                options.IncludeErrorDetails = includeJwtErrorDetails;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidAudience = audience,
                     NameClaimType = JwtRegisteredClaimNames.Sub,
                     RoleClaimType = "roles"
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        var log = context.HttpContext.RequestServices
+                            .GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("OrderForge.Api.Authentication.JwtBearer");
+                        log.LogWarning(
+                            context.Exception,
+                            "JWT validation failed — {Path} — {Message}",
+                            context.Request.Path.Value,
+                            context.Exception.Message);
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        var log = context.HttpContext.RequestServices
+                            .GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("OrderForge.Api.Authentication.JwtBearer");
+                        var authError = context.AuthenticateFailure?.Message;
+                        log.LogWarning(
+                            "JWT challenge — {Path} — Error: {Error}, Description: {Description}, AuthenticateFailure: {AuthFailure}",
+                            context.Request.Path.Value,
+                            context.Error ?? "(none)",
+                            context.ErrorDescription ?? "(none)",
+                            authError ?? "(none)");
+                        return Task.CompletedTask;
+                    }
                 };
             });
     }
