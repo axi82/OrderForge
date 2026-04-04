@@ -88,7 +88,8 @@ try
             {
                 options.Authority = authority;
                 options.Audience = audience;
-                options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                // Keycloak in Aspire/docker-compose uses http://; JwtBearer defaults to requiring HTTPS metadata.
+                options.RequireHttpsMetadata = authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidAudience = audience,

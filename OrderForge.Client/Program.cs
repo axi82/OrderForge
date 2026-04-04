@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -40,7 +41,13 @@ builder.Services.AddOidcAuthentication(options =>
     }
 });
 
+builder.Services.AddTransient<OrderForgeApiAuthorizationMessageHandler>(sp =>
+    new OrderForgeApiAuthorizationMessageHandler(
+        sp.GetRequiredService<IAccessTokenProvider>(),
+        sp.GetRequiredService<NavigationManager>(),
+        apiUri));
+
 builder.Services.AddHttpClient<IOrganisationsApiClient, OrganisationsApiClient>(client => client.BaseAddress = apiUri)
-    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
+    .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
 
 await builder.Build().RunAsync();
