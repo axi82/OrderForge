@@ -4,45 +4,49 @@
 
 <PageTitle>Companies (admin)</PageTitle>
 
-<h1 class="mb-3">Customer companies</h1>
+<h1 class="mb-3 text-2xl font-semibold">Customer companies</h1>
 
-<p class="text-muted small">Companies linked to Keycloak organisations.</p>
+<p class="text-sm text-gray-500">Companies linked to Keycloak organisations.</p>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
-    <div class="alert alert-danger" role="alert">@errorMessage</div>
+    <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800" role="alert">
+        @errorMessage
+    </div>
 }
 
 @if (loading)
 {
-    <p class="text-muted">Loading…</p>
+    <p class="text-gray-500">Loading…</p>
 }
 else if (items.Count == 0)
 {
-    <p class="text-muted">No linked companies.</p>
+    <p class="text-gray-500">No linked companies.</p>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped table-sm">
+    <div class="overflow-x-auto">
+        <table
+            class="w-full border-collapse text-sm align-middle [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left"
+        >
             <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Keycloak org id</th>
-                <th>Status</th>
-            </tr>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Keycloak org id</th>
+                    <th>Status</th>
+                </tr>
             </thead>
             <tbody>
-            @foreach (var o in items)
-            {
-                <tr>
-                    <td>@o.Id</td>
-                    <td>@o.Name</td>
-                    <td><code class="small">@(o.KeycloakOrganizationId ?? "—")</code></td>
-                    <td>@o.Status</td>
-                </tr>
-            }
+                @foreach (var o in items)
+                {
+                    <tr>
+                        <td>@o.Id</td>
+                        <td>@o.Name</td>
+                        <td><code class="text-sm">@(o.KeycloakOrganizationId ?? "—")</code></td>
+                        <td>@o.Status</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>

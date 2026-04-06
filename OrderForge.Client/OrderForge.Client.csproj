@@ -11,4 +11,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
+
+  <!-- Requires Node.js and `npm install` in this project directory (CI: run `npm ci` before `dotnet build`). -->
+  <Target Name="BuildTailwindCss" BeforeTargets="BeforeBuild" Condition="Exists('$(MSBuildProjectDirectory)\node_modules\tailwindcss')">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="npm run build:css" />
+  </Target>
 </Project>

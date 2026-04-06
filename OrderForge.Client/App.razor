@@ -12,12 +12,12 @@
                     else
                     {
                         <LayoutView Layout="@typeof(MainLayout)">
-                            <p class="p-3 text-danger" role="alert">You are not allowed to view this page.</p>
+                            <p class="p-3 text-red-600" role="alert">You are not allowed to view this page.</p>
                         </LayoutView>
                     }
                 </NotAuthorized>
                 <Authorizing>
-                    <p class="p-3 text-muted">Checking sign-in…</p>               
+                    <p class="p-3 text-gray-500">Checking sign-in…</p>               
                 </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />

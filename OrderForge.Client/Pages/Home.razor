@@ -20,34 +20,38 @@
 
 <p>B2B order portal (Blazor WebAssembly host).</p>
 
-<p><a href="login">Sign in</a> to open your dashboard and catalogue tools.</p>
+<p><a class="text-primary hover:text-primary-dark" href="login">Sign in</a> to open your dashboard and catalogue tools.</p>
 
 <AuthorizeView>
     <Authorized>
         <div class="mt-4">
-         <h4>You are logged in as <strong>@context.User.Identity?.Name</strong></h4> 
-            
+            <h4>You are logged in as <strong>@context.User.Identity?.Name</strong></h4>
+
             <h5>Your Claims (@context.User.Claims.Count() total)</h5>
-            
-            <table class="table table-sm table-striped">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Value</th>
-                        <th>Issuer</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var claim in context.User.Claims.OrderBy(c => c.Type))
-                    {
+
+            <div class="overflow-x-auto">
+                <table
+                    class="w-full border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left"
+                >
+                    <thead>
                         <tr>
-                            <td><code>@claim.Type</code></td>
-                            <td>@claim.Value</td>
-                            <td>@claim.Issuer</td>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Issuer</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var claim in context.User.Claims.OrderBy(c => c.Type))
+                        {
+                            <tr>
+                                <td><code>@claim.Type</code></td>
+                                <td>@claim.Value</td>
+                                <td>@claim.Issuer</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
             @* Optional: Quick role list *@
             <p>
@@ -58,9 +62,8 @@
             </p>
         </div>
     </Authorized>
-    
+
     <NotAuthorized>
-        <p>Please <a href="login">sign in</a> to see your account details and claims.</p>
+        <p>Please <a class="text-primary hover:text-primary-dark" href="login">sign in</a> to see your account details and claims.</p>
     </NotAuthorized>
 </AuthorizeView>
-
