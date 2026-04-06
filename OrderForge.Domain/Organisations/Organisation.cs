@@ -4,6 +4,9 @@ public class Organisation
 {
     public int Id { get; set; }
 
+    /// <summary>Keycloak Organization id for customer companies (null for legacy or non-linked rows).</summary>
+    public string? KeycloakOrganizationId { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? TradingAs { get; set; }

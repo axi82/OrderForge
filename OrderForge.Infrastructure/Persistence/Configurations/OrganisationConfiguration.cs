@@ -15,6 +15,11 @@ public class OrganisationConfiguration : IEntityTypeConfiguration<Organisation>
 
         builder.Property(o => o.Name).HasColumnName("name").IsRequired().HasMaxLength(200);
 
+        builder
+            .Property(o => o.KeycloakOrganizationId)
+            .HasColumnName("keycloak_organization_id")
+            .HasMaxLength(128);
+
         builder.Property(o => o.TradingAs).HasMaxLength(200).HasColumnName("trading_as");
 
         builder.Property(o => o.CompanyNumber).HasMaxLength(50).HasColumnName("company_number");
@@ -44,5 +49,10 @@ public class OrganisationConfiguration : IEntityTypeConfiguration<Organisation>
             .Property(o => o.UpdatedAt)
             .HasColumnName("updated_at")
             .HasDefaultValueSql("now()");
+
+        builder
+            .HasIndex(o => o.KeycloakOrganizationId)
+            .IsUnique()
+            .HasFilter("keycloak_organization_id IS NOT NULL");
     }
 }

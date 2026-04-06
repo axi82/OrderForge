@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderForge.Application.Organisations;
+using OrderForge.Api;
 
 namespace OrderForge.Api.Controllers;
 
@@ -28,6 +29,7 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
     [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<OrganisationDto>> Create(
@@ -39,6 +41,7 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{organisationId:int}")]
+    [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
     [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -61,6 +64,7 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{organisationId:int}/status")]
+    [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
     [ProducesResponseType(typeof(OrganisationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -76,6 +80,7 @@ public sealed class OrganisationsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{organisationId:int}")]
+    [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

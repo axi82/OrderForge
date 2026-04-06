@@ -1,3 +1,5 @@
+@using OrderForge.Client
+pissy pants
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">OrderForge</a>
@@ -12,6 +14,7 @@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+             
             </NavLink>
         </div>
         <div class="nav-item px-3">
@@ -24,6 +27,33 @@
                 <span class="bi bi-building" aria-hidden="true"></span> Organisations test
             </NavLink>
         </div>
+        <AuthorizeView Policy="@AuthorizationPolicies.SupplierStaff">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/companies">
+                        <span class="bi bi-briefcase" aria-hidden="true"></span> Companies (admin)
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/companies/create">
+                        <span class="bi bi-plus-circle" aria-hidden="true"></span> Create company
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Policy="@AuthorizationPolicies.InviteUsers">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users/invite">
+                        <span class="bi bi-person-plus" aria-hidden="true"></span> Invite user
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
         <div class="nav-item px-3 border-top border-secondary mt-2 pt-2">
             <AuthorizeView>
                 <Authorized>

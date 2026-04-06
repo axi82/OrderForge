@@ -83,6 +83,10 @@ services:
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Authentication__Authority: "http://keycloak:8080/realms/${KEYCLOAK_REALM}"
       Authentication__Audience: ${JWT_AUDIENCE}
+      KeycloakAdmin__BaseUrl: "http://keycloak:8080"
+      KeycloakAdmin__Realm: ${KEYCLOAK_REALM}
+      KeycloakAdmin__ClientId: "orderforge-admin-api"
+      KeycloakAdmin__ClientSecret: ${KEYCLOAK_ADMIN_API_SECRET:-orderforge-admin-api-dev-secret-change-in-prod}
       Cors__Origins__0: "http://localhost:${CLIENT_PORT}"
       Cors__Origins__1: "http://127.0.0.1:${CLIENT_PORT}"
       Seq__ServerUrl: "http://seq:80"

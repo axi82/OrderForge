@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using OrderForge.Api.ExceptionHandling;
 using OrderForge.Api.Logging;
+using OrderForge.Api.Security;
+using OrderForge.Api;
 using OrderForge.Application;
+using OrderForge.Application.Common;
 using OrderForge.Infrastructure;
 using OrderForge.ServiceDefaults;
 using OrderForge.Infrastructure.Persistence;
@@ -41,6 +45,8 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -80,7 +86,18 @@ try
     builder.Services.AddMediatR(cfg =>
         cfg.RegisterServicesFromAssembly(typeof(ApplicationAssemblyMarker).Assembly));
 
-    builder.Services.AddAuthorization();
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy(
+            AuthorizationPolicies.SupplierAdmin,
+            p => p.RequireRole("SupplierAdmin"));
+        options.AddPolicy(
+            AuthorizationPolicies.SupplierStaff,
+            p => p.RequireRole("SupplierAdmin", "SupplierViewer"));
+        options.AddPolicy(
+            AuthorizationPolicies.InviteUsers,
+            p => p.RequireRole("SupplierAdmin", "CompanyAdmin"));
+    });
     builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationFailureLoggingMiddlewareResultHandler>();
 
     if (!string.IsNullOrWhiteSpace(authority))
@@ -100,11 +117,22 @@ try
                 {
                     ValidAudience = audience,
                     NameClaimType = JwtRegisteredClaimNames.Sub,
-                    RoleClaimType = "roles"
+                    // Keycloak emits "roles"; with MapInboundClaims (default true) that maps to ClaimTypes.Role.
+                    // Must match KeycloakJwtClaimsMapper and what IsInRole / RequireRole evaluate.
+                    RoleClaimType = ClaimTypes.Role
                 };
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = context =>
+                    {
+                        if (context.Principal is not null)
+                        {
+                            KeycloakJwtClaimsMapper.Map(context.Principal);
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = context =>
                     {
                         var log = context.HttpContext.RequestServices

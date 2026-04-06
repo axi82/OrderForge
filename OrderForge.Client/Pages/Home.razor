@@ -7,3 +7,46 @@
 <p>B2B order portal (Blazor WebAssembly host).</p>
 
 <p><a href="login">Sign in</a> to open your dashboard and catalogue tools.</p>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="mt-4">
+         <h4>You are logged in as <strong>@context.User.Identity?.Name</strong></h4> 
+            
+            <h5>Your Claims (@context.User.Claims.Count() total)</h5>
+            
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Value</th>
+                        <th>Issuer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in context.User.Claims.OrderBy(c => c.Type))
+                    {
+                        <tr>
+                            <td><code>@claim.Type</code></td>
+                            <td>@claim.Value</td>
+                            <td>@claim.Issuer</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @* Optional: Quick role list *@
+            <p>
+                <strong>Roles:</strong>
+                @string.Join(", ", context.User.Claims
+                    .Where(c => c.Type.EndsWith("/role"))
+                    .Select(c => c.Value))
+            </p>
+        </div>
+    </Authorized>
+    
+    <NotAuthorized>
+        <p>Please <a href="login">sign in</a> to see your account details and claims.</p>
+    </NotAuthorized>
+</AuthorizeView>
+

@@ -7,6 +7,7 @@ internal static class OrganisationMappings
     public static OrganisationDto ToDto(this Organisation o) =>
         new(
             o.Id,
+            o.KeycloakOrganizationId,
             o.Name,
             o.TradingAs,
             o.CompanyNumber,

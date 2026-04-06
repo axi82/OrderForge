@@ -4,6 +4,8 @@ public sealed class OrganisationDto
 {
     public int Id { get; set; }
 
+    public string? KeycloakOrganizationId { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? TradingAs { get; set; }

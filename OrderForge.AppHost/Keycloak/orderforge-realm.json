@@ -351,6 +351,7 @@
       "admin-cli": [],
       "orderforge-blazor": [],
       "orderforge-api": [],
+      "orderforge-admin-api": [],
       "account-console": [],
       "broker": [
         {
@@ -812,8 +813,69 @@
             "introspection.token.claim": "true",
             "userinfo.token.claim": "false"
           }
+        },
+        {
+          "id": "c1d2e3f4-a5b6-7890-abcd-ef1234567890",
+          "name": "realm-roles-as-roles-claim",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "user.attribute": "foo",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
         }
       ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "organization",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "id": "a8c3e1d2-4b5f-6a7c-8d9e-0f1a2b3c4d5e",
+      "clientId": "orderforge-admin-api",
+      "name": "OrderForge Admin API",
+      "description": "Server-side client credentials for OrderForge API calling Keycloak Admin REST (dev secret; override in production).",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "orderforge-admin-api-dev-secret-change-in-prod",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "realm_client": "false",
+        "post.logout.redirect.uris": "+"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
       "defaultClientScopes": [
         "web-origins",
         "acr",
@@ -2632,5 +2694,22 @@
   },
   "clientPolicies": {
     "policies": []
-  }
+  },
+  "users": [
+    {
+      "username": "service-account-orderforge-admin-api",
+      "enabled": true,
+      "serviceAccountClientId": "orderforge-admin-api",
+      "clientRoles": {
+        "realm-management": [
+          "manage-realm",
+          "manage-users",
+          "view-users",
+          "query-users",
+          "view-realm",
+          "query-groups"
+        ]
+      }
+    }
+  ]
 }

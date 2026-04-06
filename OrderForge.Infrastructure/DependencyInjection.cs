@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OrderForge.Application.Common;
+using OrderForge.Application.Common.Services;
 using OrderForge.Application.Organisations;
 using OrderForge.Domain.Organisations;
+using OrderForge.Infrastructure.Keycloak;
 using OrderForge.Infrastructure.Persistence;
 using OrderForge.Infrastructure.Persistence.Repositories;
 
@@ -27,6 +30,20 @@ public static class DependencyInjection
         services.AddScoped<IOrganisationRepository, OrganisationRepository>();
         services.AddScoped<IRepository<Organisation>>(sp => sp.GetRequiredService<IOrganisationRepository>());
         services.AddScoped<IOrganisationStatusLookup, OrganisationStatusLookup>();
+
+        services.Configure<KeycloakAdminOptions>(configuration.GetSection(KeycloakAdminOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddHttpClient(
+            "KeycloakAdmin",
+            (sp, client) =>
+            {
+                var o = sp.GetRequiredService<IOptions<KeycloakAdminOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(o.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(o.BaseUrl.TrimEnd('/') + "/");
+                }
+            });
+        services.AddScoped<IKeycloakAdminService, KeycloakAdminService>();
 
         return services;
     }

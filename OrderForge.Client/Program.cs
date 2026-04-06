@@ -17,12 +17,24 @@ if (string.IsNullOrWhiteSpace(apiBase))
 
 var apiUri = new Uri(apiBase.TrimEnd('/') + "/", UriKind.Absolute);
 
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthorizationCore(options =>
+{
+    options.AddPolicy(
+        AuthorizationPolicies.SupplierAdmin,
+        p => p.RequireRole("SupplierAdmin"));
+    options.AddPolicy(
+        AuthorizationPolicies.SupplierStaff,
+        p => p.RequireRole("SupplierAdmin", "SupplierViewer"));
+    options.AddPolicy(
+        AuthorizationPolicies.InviteUsers,
+        p => p.RequireRole("SupplierAdmin", "CompanyAdmin"));
+});
 builder.Services.AddOidcAuthentication(options =>
 {
     builder.Configuration.Bind("Oidc", options.ProviderOptions);
     options.ProviderOptions.ResponseType = "code";
     options.AuthenticationPaths.LogInFailedPath = "authentication/login-failed";
+    options.UserOptions.RoleClaim = "roles";
 
     var authority = options.ProviderOptions.Authority?.TrimEnd('/');
     if (!string.IsNullOrEmpty(authority))
@@ -48,6 +60,9 @@ builder.Services.AddTransient<OrderForgeApiAuthorizationMessageHandler>(sp =>
         apiUri));
 
 builder.Services.AddHttpClient<IOrganisationsApiClient, OrganisationsApiClient>(client => client.BaseAddress = apiUri)
+    .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
+
+builder.Services.AddHttpClient<IAdminApiClient, AdminApiClient>(client => client.BaseAddress = apiUri)
     .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
 
 await builder.Build().RunAsync();

@@ -28,6 +28,10 @@ var seq = builder
 // Credentials match docker-compose (KC_BOOTSTRAP_*); KEYCLOAK_* is still set by AddKeycloakContainer from parameters.
 var keycloakAdmin = builder.AddParameter("keycloak-admin", "admin", secret: false);
 var keycloakAdminPassword = builder.AddParameter("keycloak-admin-password", "admin", secret: true);
+var keycloakAdminApiSecret = builder.AddParameter(
+    "keycloak-admin-api-secret",
+    "orderforge-admin-api-dev-secret-change-in-prod",
+    secret: true);
 var keycloakBuilder = builder.AddKeycloakContainer(
         "keycloak",
         userName: keycloakAdmin,
@@ -64,6 +68,10 @@ var api = builder
     .WithEnvironment("Seq__ServerUrl", seq.GetEndpoint("http"))
     .WithEnvironment("Authentication__Authority", $"{keycloak.GetEndpoint("http")}/realms/{keycloakRealmName}")
     .WithEnvironment("Authentication__Audience", "orderforge-api")
+    .WithEnvironment("KeycloakAdmin__BaseUrl", $"{keycloak.GetEndpoint("http")}")
+    .WithEnvironment("KeycloakAdmin__Realm", keycloakRealmName)
+    .WithEnvironment("KeycloakAdmin__ClientId", "orderforge-admin-api")
+    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminApiSecret)
     .WithEnvironment("OrderForge__RunUnderAspire", "true")
     .WithHttpEndpoint(port: 8080, name: "api-public", isProxied: false);
 

@@ -1,0 +1,123 @@
+@page "/admin/users/invite"
+@attribute [Authorize(Policy = AuthorizationPolicies.InviteUsers)]
+@inject IAdminApiClient AdminApi
+
+<PageTitle>Invite user</PageTitle>
+
+<h1 class="mb-3">Invite user to company</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+@if (loading)
+{
+    <p class="text-muted">Loading companies…</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="OnSubmitAsync">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label">Company *</label>
+                <InputSelect class="form-select" @bind-Value="model.OrganisationId">
+                    <option value="0">— Select —</option>
+                    @foreach (var c in companies)
+                    {
+                        <option value="@c.Id">@c.Name (@c.Id)</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email *</label>
+                <InputText class="form-control" @bind-Value="model.Email" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">First name</label>
+                <InputText class="form-control" @bind-Value="model.FirstName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Last name</label>
+                <InputText class="form-control" @bind-Value="model.LastName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Realm role *</label>
+                <InputSelect class="form-select" @bind-Value="model.RealmRoleName">
+                    <option value="Customer">Customer</option>
+                    <option value="CompanyAdmin">CompanyAdmin</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Temporary password (optional)</label>
+                <InputText type="password" class="form-control" @bind-Value="model.TemporaryPassword" />
+                <div class="form-text">If empty, user must use Keycloak reset / email actions.</div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary" disabled="@saving">Send invite</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private readonly List<OrganisationDto> companies = [];
+    private readonly InviteUserRequest model = new();
+    private bool loading = true;
+    private bool saving;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            companies.Clear();
+            companies.AddRange(await AdminApi.GetCompaniesAsync());
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+        if (model.OrganisationId <= 0)
+        {
+            errorMessage = "Select a company.";
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var res = await AdminApi.InviteUserAsync(model);
+            successMessage = $"Invited {res.Email} (username {res.Username}, id {res.UserId}).";
+            model.Email = string.Empty;
+            model.FirstName = null;
+            model.LastName = null;
+            model.TemporaryPassword = null;
+            model.RealmRoleName = "Customer";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}
