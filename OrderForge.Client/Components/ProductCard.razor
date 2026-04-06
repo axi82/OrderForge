@@ -1,0 +1,81 @@
+<div class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div class="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200">
+        @if (!string.IsNullOrEmpty(ImageUrl))
+        {
+            <img src="@ImageUrl" alt="" class="h-full w-full object-cover" loading="lazy" />
+        }
+        else
+        {
+            <div class="flex h-full w-full items-center justify-center text-slate-400">
+                <svg class="h-14 w-14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008H12V8.25Z" />
+                </svg>
+            </div>
+        }
+    </div>
+    <div class="flex flex-1 flex-col gap-3 p-4">
+        <div>
+            <h3 class="text-base font-semibold text-slate-900">@Title</h3>
+            <p class="mt-0.5 text-sm text-slate-500">SKU @Sku</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            @if (IsOutOfStock)
+            {
+                <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">Out of stock</span>
+            }
+            else if (IsLowStock)
+            {
+                <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">Low stock</span>
+            }
+            else
+            {
+                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">In stock</span>
+            }
+        </div>
+        <div class="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Your price</p>
+                <p class="text-lg font-semibold text-slate-900">@FormattedPrice</p>
+            </div>
+            <button
+                type="button"
+                class="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-50"
+                disabled="@IsOutOfStock"
+                @onclick="AddToCartClicked"
+            >
+                Add to cart
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Sku { get; set; } = string.Empty;
+
+    [Parameter]
+    public decimal CustomerPrice { get; set; }
+
+    [Parameter]
+    public string CurrencyFormat { get; set; } = "C";
+
+    [Parameter]
+    public string StockStatus { get; set; } = "In stock";
+
+    [Parameter]
+    public string? ImageUrl { get; set; }
+
+    [Parameter]
+    public EventCallback OnAddToCart { get; set; }
+
+    private string FormattedPrice => CustomerPrice.ToString(CurrencyFormat);
+
+    private bool IsOutOfStock => string.Equals(StockStatus, "Out of stock", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsLowStock => string.Equals(StockStatus, "Low stock", StringComparison.OrdinalIgnoreCase);
+
+    private Task AddToCartClicked() => OnAddToCart.InvokeAsync();
+}

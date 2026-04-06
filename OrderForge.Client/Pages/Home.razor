@@ -1,69 +1,76 @@
-@inject AuthenticationStateProvider AuthenticationStateProvider
 @page "/"
+@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Account</PageTitle>
+
+<div class="mb-10">
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Dashboard</h1>
+    <p class="mt-2 text-slate-600">Overview of your account and recent ordering activity.</p>
+</div>
+
+<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <KpiCard Title="Open orders" Value="@openOrders.ToString()" Note="Awaiting delivery or confirmation" />
+    <KpiCard Title="Spend (30 days)" Value="@spend30.ToString("C")" Note="Rolling total" />
+    <KpiCard Title="Saved baskets" Value="1" Note="Draft carts not submitted" />
+    <KpiCard Title="Credit available" Value="@creditAvailable.ToString("C")" Note="Subject to terms" />
+</div>
+
+<div class="mt-10 grid gap-8 lg:grid-cols-2">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Quick links</h2>
+        <ul class="mt-4 space-y-2">
+            <li>
+                <a class="text-link font-medium hover:text-primary" href="catalog">Browse catalogue</a>
+            </li>
+            <li>
+                <a class="text-link font-medium hover:text-primary" href="cart">View cart</a>
+            </li>
+            <li>
+                <a class="text-link font-medium hover:text-primary" href="orders">Order history</a>
+            </li>
+        </ul>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Recent orders</h2>
+        <div class="mt-4 overflow-x-auto">
+            <table class="w-full border-collapse text-sm [&_td]:border-t [&_td]:border-slate-100 [&_td]:py-2 [&_td]:pe-3 [&_th]:pb-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in recentOrders)
+                    {
+                        <tr>
+                            <td class="font-medium text-slate-900">#@r.OrderNumber</td>
+                            <td class="text-slate-600">@r.PlacedAt.ToString("d")</td>
+                            <td><OrderStatusBadge Status="@r.Status" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <a class="mt-4 inline-block text-sm font-medium text-link hover:text-primary" href="orders">View all orders</a>
+    </div>
+</div>
 
 @code {
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+    private readonly int openOrders = 2;
 
-        foreach (var claim in user.Claims)
-        {
-            Console.WriteLine($"{claim.Type} = {claim.Value}");
-        }
-    }
+    private readonly decimal spend30 = 6840.12m;
+
+    private readonly decimal creditAvailable = 25000m;
+
+    private readonly List<RecentOrderVm> recentOrders =
+    [
+        new(10492, new DateTime(2026, 4, 1), "Shipped"),
+        new(10471, new DateTime(2026, 3, 28), "Processing"),
+    ];
+
+    private sealed record RecentOrderVm(int OrderNumber, DateTime PlacedAt, string Status);
 }
-
-<h1>OrderForge</h1>
-
-<p>B2B order portal (Blazor WebAssembly host).</p>
-
-<p><a class="text-primary hover:text-primary-dark" href="login">Sign in</a> to open your dashboard and catalogue tools.</p>
-
-<AuthorizeView>
-    <Authorized>
-        <div class="mt-4">
-            <h4>You are logged in as <strong>@context.User.Identity?.Name</strong></h4>
-
-            <h5>Your Claims (@context.User.Claims.Count() total)</h5>
-
-            <div class="overflow-x-auto">
-                <table
-                    class="w-full border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left"
-                >
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Value</th>
-                            <th>Issuer</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var claim in context.User.Claims.OrderBy(c => c.Type))
-                        {
-                            <tr>
-                                <td><code>@claim.Type</code></td>
-                                <td>@claim.Value</td>
-                                <td>@claim.Issuer</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            @* Optional: Quick role list *@
-            <p>
-                <strong>Roles:</strong>
-                @string.Join(", ", context.User.Claims
-                    .Where(c => c.Type == "roles" || c.Type == "role" || c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
-                    .Select(c => c.Value))
-            </p>
-        </div>
-    </Authorized>
-
-    <NotAuthorized>
-        <p>Please <a class="text-primary hover:text-primary-dark" href="login">sign in</a> to see your account details and claims.</p>
-    </NotAuthorized>
-</AuthorizeView>

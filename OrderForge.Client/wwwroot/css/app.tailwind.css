@@ -5,8 +5,15 @@
 @layer base {
   html,
   body {
-    @apply font-sans antialiased;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    @apply min-h-screen bg-slate-50 font-sans text-slate-900 antialiased;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
   }
 
   h1:focus {
@@ -18,13 +25,13 @@
   }
 
   a:hover {
-    color: theme('colors.primary.dark');
+    color: theme('colors.primary.DEFAULT');
   }
 }
 
 @layer components {
   .content {
-    @apply pt-5;
+    @apply pt-0;
   }
 
   .valid.modified:not([type='checkbox']) {

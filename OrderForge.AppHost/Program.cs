@@ -32,6 +32,7 @@ var keycloakAdminApiSecret = builder.AddParameter(
     "keycloak-admin-api-secret",
     "orderforge-admin-api-dev-secret-change-in-prod",
     secret: true);
+var keycloakThemesDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Keycloak", "themes"));
 var keycloakBuilder = builder.AddKeycloakContainer(
         "keycloak",
         userName: keycloakAdmin,
@@ -39,7 +40,11 @@ var keycloakBuilder = builder.AddKeycloakContainer(
         port: 8081)
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdmin)
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
+    // Dev: avoid stale theme/template cache when iterating on order-forge (tune for production).
+    .WithEnvironment("KC_SPI_THEME_CACHE_THEMES", "false")
+    .WithEnvironment("KC_SPI_THEME_CACHE_TEMPLATES", "false")
     .WithDataVolume("orderforge-keycloak-data")
+    .WithBindMount(keycloakThemesDir, "/opt/keycloak/themes", isReadOnly: true)
     .WithLifetime(ContainerLifetime.Persistent)
     .ExcludeFromManifest();
 

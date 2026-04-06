@@ -1,7 +1,7 @@
 {
   "id": "a13d2499-42d5-4afc-ac74-d5e37280c577",
   "realm": "orderforge",
-  "displayName": "OrderForge",
+  "displayName": "Order Forge",
   "displayNameHtml": "",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
@@ -28,6 +28,8 @@
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
+  "loginTheme": "order-forge",
+  "accountTheme": "keycloak.v2",
   "sslRequired": "none",
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,

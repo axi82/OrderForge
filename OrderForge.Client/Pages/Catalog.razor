@@ -1,0 +1,122 @@
+@page "/catalog"
+@attribute [Authorize]
+
+<PageTitle>Catalogue</PageTitle>
+
+<div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Catalogue</h1>
+        <p class="mt-2 max-w-2xl text-slate-600">Search and browse products with your contract pricing and live stock status.</p>
+    </div>
+</div>
+
+<div class="mb-8 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:gap-6">
+    <div class="relative min-w-0 flex-1">
+        <label class="sr-only" for="catalog-search">Search</label>
+        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+        </span>
+        <input
+            id="catalog-search"
+            type="search"
+            class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Search by name or SKU…"
+            @bind="searchQuery"
+            @bind:event="oninput"
+        />
+    </div>
+    <div class="flex flex-wrap gap-2">
+        @foreach (var c in Categories)
+        {
+            <button
+                type="button"
+                class="@FilterChipClass(c)"
+                @onclick="() => ToggleCategory(c)"
+            >
+                @c
+            </button>
+        }
+    </div>
+</div>
+
+<div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    @foreach (var p in FilteredProducts)
+    {
+        <ProductCard
+            Title="@p.Title"
+            Sku="@p.Sku"
+            CustomerPrice="@p.CustomerPrice"
+            StockStatus="@p.StockStatus"
+            OnAddToCart="@(() => OnAddAsync(p))"
+        />
+    }
+</div>
+
+@if (!FilteredProducts.Any())
+{
+    <p class="mt-10 text-center text-slate-500">No products match your filters.</p>
+}
+
+@code {
+    private string searchQuery = string.Empty;
+
+    private readonly HashSet<string> activeCategories = [];
+
+    private static readonly string[] Categories = ["All", "Dairy", "Dry goods", "Beverages", "Frozen"];
+
+    private readonly List<ProductVm> products =
+    [
+        new("Whole milk 2L", "DAI-001", 2.49m, "In stock", "Dairy"),
+        new("Cheddar block 500g", "DAI-102", 6.99m, "Low stock", "Dairy"),
+        new("Pasta penne 5kg", "DRY-220", 18.50m, "In stock", "Dry goods"),
+        new("Tomato passata 6x700ml", "DRY-305", 12.00m, "In stock", "Dry goods"),
+        new("Sparkling water 24pk", "BEV-012", 14.25m, "Out of stock", "Beverages"),
+        new("Frozen peas 10kg", "FRZ-088", 24.90m, "In stock", "Frozen"),
+    ];
+
+    private IEnumerable<ProductVm> FilteredProducts =>
+        products.Where(p =>
+        {
+            var catOk = activeCategories.Count == 0
+                || activeCategories.Contains("All")
+                || activeCategories.Contains(p.Category);
+            var q = searchQuery.Trim();
+            var textOk = string.IsNullOrEmpty(q)
+                || p.Title.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || p.Sku.Contains(q, StringComparison.OrdinalIgnoreCase);
+            return catOk && textOk;
+        });
+
+    private string FilterChipClass(string category)
+    {
+        var on = (activeCategories.Count == 0 && category == "All")
+            || activeCategories.Contains(category);
+        return on
+            ? "rounded-full bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm"
+            : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50";
+    }
+
+    private void ToggleCategory(string category)
+    {
+        if (category == "All")
+        {
+            activeCategories.Clear();
+            activeCategories.Add("All");
+            return;
+        }
+
+        activeCategories.Remove("All");
+        if (!activeCategories.Add(category))
+            activeCategories.Remove(category);
+        if (activeCategories.Count == 0)
+            activeCategories.Add("All");
+    }
+
+    private Task OnAddAsync(ProductVm p) =>
+        // Placeholder until cart API exists
+        Task.CompletedTask;
+
+    private sealed record ProductVm(string Title, string Sku, decimal CustomerPrice, string StockStatus, string Category);
+}

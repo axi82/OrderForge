@@ -1,0 +1,34 @@
+---
+description: UI styling for OrderForge.Client — Tailwind CSS only; no Bootstrap
+globs: OrderForge.Client/**/*.razor,OrderForge.Client/**/*.razor.css,OrderForge.Client/wwwroot/**/*.html,OrderForge.Client/wwwroot/css/*.css,OrderForge.Client/tailwind.config.js,OrderForge.Client/package.json
+alwaysApply: false
+---
+
+# Styling (OrderForge.Client)
+
+## Stack
+
+- **Tailwind CSS v3** builds global styles from [`OrderForge.Client/wwwroot/css/app.tailwind.css`](OrderForge.Client/wwwroot/css/app.tailwind.css) into [`OrderForge.Client/wwwroot/css/app.css`](OrderForge.Client/wwwroot/css/app.css) via `npm run build:css` (see [`OrderForge.Client/package.json`](OrderForge.Client/package.json)). MSBuild runs this when `node_modules/tailwindcss` exists.
+- **Do not** add Bootstrap (CSS, JS, or Bootstrap Icons as the primary icon system). **Do not** reintroduce Bootstrap utility class names in Razor markup (`btn`, `row`, `col-*`, `container`, `navbar`, `form-control`, `table`, `alert`, `card`, etc.).
+
+## When changing UI
+
+1. Prefer **Tailwind utility classes** on elements in `.razor` (and minimal markup-only classes in `.razor.css`).
+2. Reuse **ForgeClean** tokens from [`OrderForge.Client/tailwind.config.js`](OrderForge.Client/tailwind.config.js): **nav / brand** → `primary`, `primary-dark`, `primary-ring`, `link`; **CTAs** (Add to cart, Place order, primary submit) → `accent`, `accent-dark`, `accent-ring`.
+3. After adding or changing class names in Razor/HTML, run `npm run build:css` in `OrderForge.Client` (or `dotnet build` if Node deps are installed) so `app.css` includes new utilities.
+4. **Icons**: Prefer **inline SVG** (e.g. Heroicons-style paths) with `h-* w-* shrink-0 text-current`; avoid icon fonts unless there is a strong reason.
+
+## Scoped CSS (`.razor.css`)
+
+- Use only for what utilities cannot express cleanly (e.g. `::deep` for child components, complex layout shell, keyframe/height tricks like the admin submenu).
+- Do not duplicate Tailwind in large custom rulesets; keep scoped files small.
+
+## Forms and tables
+
+- Inputs/selects: full width, border, rounded, focus ring — match existing admin/organisations pages (e.g. `focus:ring-2 focus:ring-primary/30`).
+- Tables: `w-full border-collapse text-sm`, header `bg-gray-100`, optional striping with `[&_tbody_tr:nth-child(odd)]:bg-gray-50`, wrap wide tables in `overflow-x-auto`.
+
+## Anti-patterns
+
+- Adding arbitrary `<style>` blocks or heavy custom CSS for what utilities solve.
+- Committing only Tailwind source changes without regenerating `app.css` when the CI machine will not run Tailwind (ensure pipeline runs `npm ci` + `dotnet build`, or commit built `app.css`).

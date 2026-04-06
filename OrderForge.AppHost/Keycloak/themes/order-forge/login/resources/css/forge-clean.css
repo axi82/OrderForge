@@ -1,0 +1,160 @@
+/**
+ * ForgeClean — Order Forge Blazor alignment for Keycloak login / logout / OIDC.
+ * Navy #1E3A8A, teal CTA #0d9488, slate-50 page, white card.
+ *
+ * keycloak.v2 applies .pf-v5-theme-dark when the realm allows dark mode and the
+ * browser prefers dark; these rules force a light ForgeClean shell anyway.
+ */
+html {
+  color-scheme: light only;
+}
+
+html.login-pf,
+html.login-pf body,
+html.pf-v5-theme-dark,
+html.pf-v5-theme-dark body,
+body.pf-v5-c-login {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+.pf-v5-c-login,
+.pf-v5-c-login__container {
+  background: transparent !important;
+  color: #0f172a !important;
+}
+
+:root {
+  --forge-navy: #1e3a8a;
+  --forge-navy-dark: #172554;
+  --forge-teal: #0d9488;
+  --forge-teal-dark: #0f766e;
+  --forge-slate-50: #f8fafc;
+  --forge-slate-200: #e2e8f0;
+  --keycloak-card-top-color: var(--forge-teal);
+}
+
+/* Main card: always light surface (overrides PatternFly dark tokens) */
+.pf-v5-c-login__main,
+.pf-v5-theme-dark .pf-v5-c-login__main {
+  --pf-v5-c-login__main--BackgroundColor: #fff;
+  background-color: #fff !important;
+  color: #0f172a !important;
+  border-radius: 0.75rem;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.06),
+    0 1px 2px -1px rgb(0 0 0 / 0.06);
+  border: 1px solid var(--forge-slate-200);
+}
+
+.pf-v5-c-login__main-header {
+  border-top: 4px solid var(--forge-teal);
+  border-radius: 0.75rem 0.75rem 0 0;
+  background-color: #fff !important;
+}
+
+.pf-v5-c-login__main-body {
+  background-color: #fff !important;
+  color: #0f172a !important;
+}
+
+#kc-header-wrapper {
+  font-size: 1.375rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  white-space: normal;
+  text-align: center;
+  text-transform: none !important;
+  letter-spacing: -0.025em !important;
+  color: var(--forge-navy) !important;
+}
+
+.pf-v5-c-title,
+.pf-v5-theme-dark .pf-v5-c-title,
+.pf-v5-c-login__main-header .pf-v5-c-title {
+  color: var(--forge-navy) !important;
+  font-weight: 600 !important;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--BackgroundColor: var(--forge-teal);
+  --pf-v5-c-button--BorderColor: var(--forge-teal);
+  --pf-v5-c-button--Color: #fff;
+  background-color: var(--forge-teal) !important;
+  border-color: var(--forge-teal) !important;
+  color: #fff !important;
+  border-radius: 0.5rem;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  --pf-v5-c-button--BackgroundColor: var(--forge-teal-dark);
+  --pf-v5-c-button--BorderColor: var(--forge-teal-dark);
+  background-color: var(--forge-teal-dark) !important;
+  border-color: var(--forge-teal-dark) !important;
+}
+
+.pf-v5-c-button.pf-m-secondary,
+.pf-v5-c-button.pf-m-control {
+  border-radius: 0.5rem;
+}
+
+.pf-v5-c-button.pf-m-link,
+.pf-v5-theme-dark .pf-v5-c-button.pf-m-link {
+  color: var(--forge-teal) !important;
+}
+
+.pf-v5-c-button.pf-m-link:hover {
+  color: var(--forge-teal-dark) !important;
+}
+
+.pf-v5-c-form-control,
+.pf-v5-theme-dark .pf-v5-c-form-control {
+  border-radius: 0.5rem;
+  background-color: #fff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.pf-v5-c-check__label,
+.pf-v5-c-form__label-text,
+.pf-v5-theme-dark .pf-v5-c-check__label,
+.pf-v5-theme-dark .pf-v5-c-form__label-text {
+  color: #334155 !important;
+}
+
+.pf-v5-c-login__main-footer-band {
+  border-top-color: var(--forge-slate-200);
+  background-color: #fff !important;
+}
+
+.pf-v5-c-login__main-footer-helper-text,
+.pf-v5-c-login__main-footer-band-item,
+.pf-v5-theme-dark .pf-v5-c-login__main-footer-helper-text {
+  color: #64748b !important;
+}
+
+.pf-v5-c-alert.pf-m-inline.pf-m-success {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.pf-v5-c-alert.pf-m-inline.pf-m-danger,
+.pf-v5-c-alert.pf-m-inline.pf-m-error {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.pf-v5-c-alert.pf-m-inline.pf-m-warning {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+}
+
+#kc-info {
+  color: #334155;
+}
+
+/* Social / IdP row readability on light bg */
+#kc-social-providers svg:not(.google) {
+  filter: none;
+}

@@ -1,0 +1,93 @@
+@page "/cart"
+@attribute [Authorize]
+
+<PageTitle>Cart</PageTitle>
+
+<h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Your cart</h1>
+<p class="mt-2 text-slate-600">Review quantities before placing your order.</p>
+
+<div class="mt-8 grid gap-8 lg:grid-cols-3">
+    <div class="lg:col-span-2">
+        <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm">
+            @foreach (var line in lines)
+            {
+                <li class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="min-w-0 flex-1">
+                        <p class="font-medium text-slate-900">@line.Title</p>
+                        <p class="text-sm text-slate-500">@line.Sku · @line.UnitPrice.ToString("C") each</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="sr-only" for="@($"qty-{line.Id}")">Quantity</label>
+                        <input
+                            id="@($"qty-{line.Id}")"
+                            type="number"
+                            min="1"
+                            class="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            @bind="line.Quantity"
+                        />
+                        <p class="min-w-[4rem] text-right font-semibold text-slate-900">@line.LineTotal.ToString("C")</p>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="h-fit rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Summary</h2>
+        <dl class="mt-4 space-y-2 text-sm">
+            <div class="flex justify-between text-slate-600">
+                <dt>Subtotal</dt>
+                <dd class="font-medium text-slate-900">@Subtotal.ToString("C")</dd>
+            </div>
+            <div class="flex justify-between text-slate-600">
+                <dt>Estimated delivery</dt>
+                <dd class="font-medium text-slate-900">@DeliveryEstimate.ToString("C")</dd>
+            </div>
+        </dl>
+        <div class="mt-4 flex justify-between border-t border-slate-100 pt-4 text-base font-semibold text-slate-900">
+            <span>Total</span>
+            <span>@Total.ToString("C")</span>
+        </div>
+        <button
+            type="button"
+            class="mt-6 w-full rounded-lg bg-accent py-3 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent-ring disabled:cursor-not-allowed disabled:opacity-50"
+            disabled="@(!lines.Any())"
+            @onclick="PlaceOrderAsync"
+        >
+            Place order
+        </button>
+        <p class="mt-3 text-center text-xs text-slate-500">Checkout will connect to your API when available.</p>
+    </div>
+</div>
+
+@code {
+    private readonly List<CartLineVm> lines =
+    [
+        new(1, "Pasta penne 5kg", "DRY-220", 18.50m, 2),
+        new(2, "Whole milk 2L", "DAI-001", 2.49m, 12),
+    ];
+
+    private decimal Subtotal => lines.Sum(l => l.LineTotal);
+
+    private decimal DeliveryEstimate => Subtotal > 0 ? 15m : 0;
+
+    private decimal Total => Subtotal + DeliveryEstimate;
+
+    private Task PlaceOrderAsync() =>
+        // Placeholder: integrate order submission API
+        Task.CompletedTask;
+
+    private sealed class CartLineVm(int id, string title, string sku, decimal unitPrice, int quantity)
+    {
+        public int Id { get; } = id;
+
+        public string Title { get; } = title;
+
+        public string Sku { get; } = sku;
+
+        public decimal UnitPrice { get; } = unitPrice;
+
+        public int Quantity { get; set; } = quantity;
+
+        public decimal LineTotal => UnitPrice * Quantity;
+    }
+}

@@ -1,0 +1,17 @@
+@{
+    var (bg, text) = Status switch
+    {
+        "Delivered" or "Completed" => ("bg-emerald-100", "text-emerald-800"),
+        "Shipped" => ("bg-sky-100", "text-sky-800"),
+        "Processing" or "Confirmed" => ("bg-amber-100", "text-amber-900"),
+        "Pending" => ("bg-slate-100", "text-slate-700"),
+        "Cancelled" => ("bg-rose-100", "text-rose-800"),
+        _ => ("bg-slate-100", "text-slate-700"),
+    };
+}
+<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium @bg @text">@Status</span>
+
+@code {
+    [Parameter]
+    public string Status { get; set; } = "Pending";
+}
