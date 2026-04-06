@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using OrderForge.Client;
+using OrderForge.Client.Authentication;
 using OrderForge.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -51,7 +52,7 @@ builder.Services.AddOidcAuthentication(options =>
     {
         options.ProviderOptions.DefaultScopes.Add("email");
     }
-});
+}).AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, KeycloakUserClaimFactory>(); 
 
 builder.Services.AddTransient<OrderForgeApiAuthorizationMessageHandler>(sp =>
     new OrderForgeApiAuthorizationMessageHandler(

@@ -1,6 +1,20 @@
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @page "/"
 
 <PageTitle>Home</PageTitle>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        foreach (var claim in user.Claims)
+        {
+            Console.WriteLine($"{claim.Type} = {claim.Value}");
+        }
+    }
+}
 
 <h1>OrderForge</h1>
 
@@ -39,7 +53,7 @@
             <p>
                 <strong>Roles:</strong>
                 @string.Join(", ", context.User.Claims
-                    .Where(c => c.Type.EndsWith("/role"))
+                    .Where(c => c.Type == "roles" || c.Type == "role" || c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
                     .Select(c => c.Value))
             </p>
         </div>
