@@ -20,6 +20,9 @@ public static class AuthorizationPoliciesExtensions
             options.AddPolicy(
                 AuthorizationPolicies.InviteUsers,
                 p => p.RequireRole("SupplierAdmin", "CompanyAdmin"));
+            options.AddPolicy(
+                AuthorizationPolicies.Customer,
+                p => p.RequireRole("Customer"));
         });
 
         return services;

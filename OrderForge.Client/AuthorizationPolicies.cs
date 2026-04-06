@@ -7,4 +7,6 @@ public static class AuthorizationPolicies
     public const string SupplierStaff = "SupplierStaff";
 
     public const string InviteUsers = "InviteUsers";
+
+    public const string Customer = "Customer";
 }
