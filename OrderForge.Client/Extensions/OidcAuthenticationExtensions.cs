@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OrderForge.Client.Authentication;
+using OrderForge.Client;
 
 namespace OrderForge.Client.Extensions;
 
@@ -13,7 +14,7 @@ public static class OidcAuthenticationExtensions
         {
             configuration.Bind("Oidc", options.ProviderOptions);
             options.ProviderOptions.ResponseType = "code";
-            options.AuthenticationPaths.LogInFailedPath = "auth/login-failed";
+            options.AuthenticationPaths.LogInFailedPath = Routes.Auth.LoginFailed;
             options.AuthenticationPaths.LogOutSucceededPath = string.Empty;
             options.UserOptions.RoleClaim = "roles";
 

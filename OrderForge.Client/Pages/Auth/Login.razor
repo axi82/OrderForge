@@ -1,6 +1,7 @@
 @page "/auth/login"
 @layout EmptyLayout
 @inject NavigationManager Navigation
+@inject AppNavigator Navigator
 @inject IConfiguration Configuration
 
 <PageTitle>Sign in</PageTitle>
@@ -8,7 +9,7 @@
 <div class="flex min-h-screen flex-col bg-slate-50">
     <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <a class="text-lg font-semibold tracking-tight text-primary no-underline hover:text-primary-dark" href="">Order Forge</a>
+            <a class="text-lg font-semibold tracking-tight text-primary no-underline hover:text-primary-dark" href="@Routes.App.Root">Order Forge</a>
         </div>
     </header>
     <main class="flex flex-1 items-center justify-center px-4 py-16">
@@ -63,7 +64,7 @@
     private void BeginLogin()
     {
         var returnUrl = TryGetQueryValue(Navigation.ToAbsoluteUri(Navigation.Uri), "returnUrl") ?? "dashboard";
-        Navigation.NavigateTo("authentication/login?returnUrl=" + Uri.EscapeDataString(returnUrl));
+        Navigator.BeginOidcSignIn(returnUrl);
     }
 
     private static string? TryGetQueryValue(Uri uri, string name)

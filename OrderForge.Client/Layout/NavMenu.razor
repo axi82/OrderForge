@@ -1,11 +1,11 @@
 @using OrderForge.Client
-@inject NavigationManager Navigation
+@inject AppNavigator Navigator
 
 <header class="sticky top-0 z-50 bg-primary shadow-md">
     <div class="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <a
             class="shrink-0 text-lg font-semibold tracking-tight text-white no-underline hover:text-white"
-            href=""
+            href="@Routes.App.Root"
             @onclick="CloseMobile"
         >
             Order Forge
@@ -36,10 +36,10 @@
         <nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
             <AuthorizeView>
                 <Authorized>
-                    <NavLink class="@NavInactive" href="" Match="NavLinkMatch.All" ActiveClass="@NavActive" @onclick="CloseMobile">Account</NavLink>
-                    <NavLink class="@NavInactive" href="catalog" ActiveClass="@NavActive" @onclick="CloseMobile">Catalogue</NavLink>
-                    <NavLink class="@NavInactive" href="orders" ActiveClass="@NavActive" @onclick="CloseMobile">My orders</NavLink>
-                    <NavLink class="@($"{NavInactive} inline-flex items-center gap-2")" href="cart" ActiveClass="@NavActive" @onclick="CloseMobile">
+                    <NavLink class="@NavInactive" href="@Routes.App.Root" Match="NavLinkMatch.All" ActiveClass="@NavActive" @onclick="CloseMobile">Account</NavLink>
+                    <NavLink class="@NavInactive" href="@Routes.Store.Catalog" ActiveClass="@NavActive" @onclick="CloseMobile">Catalogue</NavLink>
+                    <NavLink class="@NavInactive" href="@Routes.Store.Orders" ActiveClass="@NavActive" @onclick="CloseMobile">My orders</NavLink>
+                    <NavLink class="@($"{NavInactive} inline-flex items-center gap-2")" href="@Routes.Store.Cart" ActiveClass="@NavActive" @onclick="CloseMobile">
                         <span>Cart</span>
                         @if (CartBadgeCount > 0)
                         {
@@ -55,7 +55,7 @@
                     </button>
                 </Authorized>
                 <NotAuthorized>
-                    <NavLink class="@NavInactive" href="login" ActiveClass="@NavActive">Sign in</NavLink>
+                    <NavLink class="@NavInactive" href="@Routes.Nav.SignIn" ActiveClass="@NavActive">Sign in</NavLink>
                 </NotAuthorized>
             </AuthorizeView>
         </nav>
@@ -68,10 +68,10 @@
         <nav class="flex flex-col gap-1 px-4 py-3" aria-label="Mobile primary">
             <AuthorizeView>
                 <Authorized>
-                    <NavLink class="@MobileLink" href="" Match="NavLinkMatch.All" ActiveClass="@NavActive" @onclick="CloseMobile">Account</NavLink>
-                    <NavLink class="@MobileLink" href="catalog" ActiveClass="@NavActive" @onclick="CloseMobile">Catalogue</NavLink>
-                    <NavLink class="@MobileLink" href="orders" ActiveClass="@NavActive" @onclick="CloseMobile">My orders</NavLink>
-                    <NavLink class="@($"{MobileLink} inline-flex items-center gap-2")" href="cart" ActiveClass="@NavActive" @onclick="CloseMobile">
+                    <NavLink class="@MobileLink" href="@Routes.App.Root" Match="NavLinkMatch.All" ActiveClass="@NavActive" @onclick="CloseMobile">Account</NavLink>
+                    <NavLink class="@MobileLink" href="@Routes.Store.Catalog" ActiveClass="@NavActive" @onclick="CloseMobile">Catalogue</NavLink>
+                    <NavLink class="@MobileLink" href="@Routes.Store.Orders" ActiveClass="@NavActive" @onclick="CloseMobile">My orders</NavLink>
+                    <NavLink class="@($"{MobileLink} inline-flex items-center gap-2")" href="@Routes.Store.Cart" ActiveClass="@NavActive" @onclick="CloseMobile">
                         <span>Cart</span>
                         @if (CartBadgeCount > 0)
                         {
@@ -82,8 +82,8 @@
                         <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
                             <Authorized Context="adminAuth">
                                 <p class="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-white/60">Admin</p>
-                                <a class="block rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10" href="admin/companies" @onclick="CloseMobile">Companies</a>
-                                <a class="block rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10" href="admin/users/invite" @onclick="CloseMobile">Invite user</a>
+                                <a class="block rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10" href="@Routes.Admin.Companies" @onclick="CloseMobile">Companies</a>
+                                <a class="block rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10" href="@Routes.Admin.UsersInvite" @onclick="CloseMobile">Invite user</a>
                             </Authorized>
                         </AuthorizeView>
                         <button
@@ -96,7 +96,7 @@
                     </div>
                 </Authorized>
                 <NotAuthorized>
-                    <NavLink class="@MobileLink" href="login" @onclick="CloseMobile">Sign in</NavLink>
+                    <NavLink class="@MobileLink" href="@Routes.Nav.SignIn" @onclick="CloseMobile">Sign in</NavLink>
                 </NotAuthorized>
             </AuthorizeView>
         </nav>
@@ -123,6 +123,6 @@
     private void SignOut()
     {
         CloseMobile();
-        Navigation.NavigateToLogout("authentication/logout");
+        Navigator.SignOut();
     }
 }

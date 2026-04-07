@@ -1,4 +1,5 @@
 @inject NavigationManager Navigation
+@inject AppNavigator Navigator
 
 @code {
     protected override void OnInitialized()
@@ -9,6 +10,6 @@
             relative = "dashboard";
         }
 
-        Navigation.NavigateTo("auth/login?returnUrl=" + Uri.EscapeDataString(relative));
+        Navigator.GoToSignInPage(relative);
     }
 }
