@@ -1,4 +1,4 @@
-@page "/login"
+@page "/auth/login"
 @layout EmptyLayout
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
@@ -62,6 +62,33 @@
 
     private void BeginLogin()
     {
-        Navigation.NavigateTo("authentication/login?returnUrl=" + Uri.EscapeDataString("dashboard"));
+        var returnUrl = TryGetQueryValue(Navigation.ToAbsoluteUri(Navigation.Uri), "returnUrl") ?? "dashboard";
+        Navigation.NavigateTo("authentication/login?returnUrl=" + Uri.EscapeDataString(returnUrl));
+    }
+
+    private static string? TryGetQueryValue(Uri uri, string name)
+    {
+        var q = uri.Query;
+        if (string.IsNullOrEmpty(q) || q[0] != '?')
+        {
+            return null;
+        }
+
+        var prefix = name + "=";
+        ReadOnlySpan<char> tail = q.AsSpan(1);
+        while (!tail.IsEmpty)
+        {
+            var amp = tail.IndexOf('&');
+            var pair = amp >= 0 ? tail[..amp] : tail;
+            if (pair.StartsWith(prefix.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                var raw = pair[prefix.Length..];
+                return Uri.UnescapeDataString(raw.ToString());
+            }
+
+            tail = amp >= 0 ? tail[(amp + 1)..] : ReadOnlySpan<char>.Empty;
+        }
+
+        return null;
     }
 }

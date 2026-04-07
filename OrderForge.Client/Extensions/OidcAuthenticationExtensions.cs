@@ -13,7 +13,7 @@ public static class OidcAuthenticationExtensions
         {
             configuration.Bind("Oidc", options.ProviderOptions);
             options.ProviderOptions.ResponseType = "code";
-            options.AuthenticationPaths.LogInFailedPath = "authentication/login-failed";
+            options.AuthenticationPaths.LogInFailedPath = "auth/login-failed";
             options.AuthenticationPaths.LogOutSucceededPath = string.Empty;
             options.UserOptions.RoleClaim = "roles";
 
