@@ -1,9 +1,47 @@
 ﻿@inherits LayoutComponentBase
-<div class="flex min-h-screen flex-col bg-slate-50">
-    <header class="border-b border-slate-200 bg-white px-4 py-3">
-        <p class="text-sm font-medium text-slate-900">Supplier portal</p>
-    </header>
-    <main class="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        @Body
-    </main>
+
+<div class="flex min-h-screen flex-col bg-slate-50 md:flex-row">
+    <aside
+        class="w-full shrink-0 border-b border-slate-200 bg-white md:w-56 md:border-e md:border-b-0"
+        aria-label="Supplier navigation"
+    >
+        <div class="px-4 py-4 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Supplier portal</p>
+
+            <AuthorizeView Policy="@AuthorizationPolicies.SupplierStaff">
+                <Authorized>
+                    <div class="mt-6">
+                        <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Admin</p>
+                        <nav class="flex flex-col gap-1" aria-label="Admin">
+                            <NavLink
+                                href="@Routes.Admin.Companies"
+                                class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-100"
+                                ActiveClass="bg-slate-100 text-primary font-semibold"
+                                Match="NavLinkMatch.Prefix"
+                            >
+                                Companies
+                            </NavLink>
+                            <NavLink
+                                href="@Routes.Admin.Users"
+                                class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-100"
+                                ActiveClass="bg-slate-100 text-primary font-semibold"
+                                Match="NavLinkMatch.Prefix"
+                            >
+                                Users
+                            </NavLink>
+                        </nav>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </aside>
+
+    <div class="flex min-w-0 flex-1 flex-col">
+        <header class="border-b border-slate-200 bg-white px-4 py-3">
+            <p class="text-sm font-medium text-slate-900">Supplier portal</p>
+        </header>
+        <main class="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+            @Body
+        </main>
+    </div>
 </div>

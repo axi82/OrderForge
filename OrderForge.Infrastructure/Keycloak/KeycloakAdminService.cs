@@ -118,14 +118,20 @@ public sealed class KeycloakAdminService(
     public async Task<KeycloakOrganizationResult> CreateOrganizationAsync(
         string organizationName,
         string? displayName,
+        string? organizationInternetDomain,
         CancellationToken cancellationToken = default)
     {
         ValidateConfiguration();
+        var domainName = ResolveOrganizationInternetDomain(organizationName, organizationInternetDomain);
         var org = new OrganizationRepresentation
         {
             Name = organizationName,
             Alias = SlugifyAlias(organizationName),
-            Description = displayName
+            Description = displayName,
+            Domains =
+            [
+                new OrganizationDomainRepresentation { Name = domainName, Verified = false }
+            ]
         };
 
         using var message = await CreateRequestAsync(
@@ -322,8 +328,19 @@ public sealed class KeycloakAdminService(
         using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            await ThrowKeycloakErrorAsync(response, "Keycloak client credentials token request failed.", cancellationToken)
-                .ConfigureAwait(false);
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            logger.LogWarning(
+                "Keycloak client credentials failed for realm {Realm}, client {ClientId}: HTTP {Status}. Body: {Body}",
+                _options.Realm,
+                _options.ClientId,
+                (int)response.StatusCode,
+                errorBody);
+            throw new KeycloakAdminException(
+                $"Keycloak client credentials token request failed. HTTP {(int)response.StatusCode}")
+            {
+                StatusCode = (int)response.StatusCode,
+                ResponseBody = errorBody
+            };
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -424,6 +441,17 @@ public sealed class KeycloakAdminService(
         return string.IsNullOrEmpty(s) ? "org" : s;
     }
 
+    /// <summary>Keycloak requires at least one organization domain; use a reserved-style placeholder if none supplied.</summary>
+    private static string ResolveOrganizationInternetDomain(string organizationName, string? organizationInternetDomain)
+    {
+        if (!string.IsNullOrWhiteSpace(organizationInternetDomain))
+        {
+            return organizationInternetDomain.Trim().ToLowerInvariant();
+        }
+
+        return $"{SlugifyAlias(organizationName)}.orderforge.test";
+    }
+
     private sealed class UserRepresentation
     {
         public string? Id { get; set; }
@@ -455,6 +483,14 @@ public sealed class KeycloakAdminService(
         public string? Name { get; set; }
         public string? Alias { get; set; }
         public string? Description { get; set; }
+
+        public List<OrganizationDomainRepresentation>? Domains { get; set; }
+    }
+
+    private sealed class OrganizationDomainRepresentation
+    {
+        public string? Name { get; set; }
+        public bool Verified { get; set; }
     }
 
     private sealed class TokenResponse

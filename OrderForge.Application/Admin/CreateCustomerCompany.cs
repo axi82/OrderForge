@@ -14,6 +14,7 @@ public sealed record CreateCustomerCompanyCommand(
     string? CompanyNumber,
     string? VatNumber,
     string? AccountNumber,
+    string? OrganizationDomain,
     string Status = KnownOrganisationStatusCodes.Active) : IRequest<OrganisationDto>;
 
 public sealed class CreateCustomerCompanyCommandValidator : AbstractValidator<CreateCustomerCompanyCommand>
@@ -25,10 +26,38 @@ public sealed class CreateCustomerCompanyCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.CompanyNumber).MaximumLength(50);
         RuleFor(x => x.VatNumber).MaximumLength(20);
         RuleFor(x => x.AccountNumber).MaximumLength(20);
+        RuleFor(x => x.OrganizationDomain)
+            .MaximumLength(253)
+            .Must(BeNullEmptyOrPlausibleInternetDomain)
+            .WithMessage("Organization domain must look like an email domain (e.g. acme.com).");
         RuleFor(x => x.Status)
             .NotEmpty()
             .Must(code => KnownOrganisationStatusCodes.All.Contains(code))
             .WithMessage($"Status must be one of: {string.Join(", ", KnownOrganisationStatusCodes.All)}.");
+    }
+
+    private static bool BeNullEmptyOrPlausibleInternetDomain(string? d)
+    {
+        if (string.IsNullOrWhiteSpace(d))
+        {
+            return true;
+        }
+
+        var s = d.Trim().ToLowerInvariant();
+        if (s.Length > 253 || !s.Contains('.', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        foreach (var ch in s)
+        {
+            if (!(char.IsAsciiLetterOrDigit(ch) || ch is '.' or '-'))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -56,7 +85,11 @@ public sealed class CreateCustomerCompanyCommandHandler(
         }
 
         var displayName = string.IsNullOrWhiteSpace(request.TradingAs) ? request.Name : request.TradingAs;
-        var kcOrg = await keycloakAdmin.CreateOrganizationAsync(request.Name, displayName, cancellationToken);
+        var kcOrg = await keycloakAdmin.CreateOrganizationAsync(
+            request.Name,
+            displayName,
+            request.OrganizationDomain,
+            cancellationToken);
 
         var statusId = await organisationStatuses.GetIdForCodeAsync(request.Status, cancellationToken);
         if (statusId is null)

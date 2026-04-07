@@ -12,6 +12,9 @@ public sealed class CreateCustomerCompanyRequest
 
     public string? AccountNumber { get; set; }
 
+    /// <summary>Email-style domain for Keycloak organisation (e.g. acme.com). If empty, a placeholder is generated.</summary>
+    public string? OrganizationDomain { get; set; }
+
     public string Status { get; set; } = "Active";
 }
 

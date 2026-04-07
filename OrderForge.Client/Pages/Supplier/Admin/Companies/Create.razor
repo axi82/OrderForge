@@ -6,7 +6,9 @@
 
 <h1 class="mb-3 text-2xl font-semibold">Create customer company</h1>
 
-<p class="text-sm text-gray-500">Creates a Keycloak organisation and a linked company record.</p>
+<p class="text-sm text-gray-500">
+    Creates a Keycloak organisation (requires at least one internet domain) and a linked company record.
+</p>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -37,6 +39,17 @@
                 class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 @bind-Value="model.TradingAs"
             />
+        </div>
+        <div class="w-full px-2">
+            <label class="mb-1 block text-sm font-medium text-gray-700">Organization email domain</label>
+            <InputText
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                @bind-Value="model.OrganizationDomain"
+                placeholder="e.g. acme.com"
+            />
+            <p class="mt-1 text-xs text-gray-500">
+                Used by Keycloak to relate users (email) to this company. Leave blank to use a generated placeholder domain.
+            </p>
         </div>
         <div class="w-full px-2 md:w-1/2">
             <label class="mb-1 block text-sm font-medium text-gray-700">Company number</label>
@@ -99,6 +112,7 @@
             successMessage = $"Created company #{created.Id} (Keycloak org: {created.KeycloakOrganizationId}).";
             model.Name = string.Empty;
             model.TradingAs = null;
+            model.OrganizationDomain = null;
             model.CompanyNumber = null;
             model.VatNumber = null;
             model.AccountNumber = null;

@@ -2704,12 +2704,7 @@
       "serviceAccountClientId": "orderforge-admin-api",
       "clientRoles": {
         "realm-management": [
-          "manage-realm",
-          "manage-users",
-          "view-users",
-          "query-users",
-          "view-realm",
-          "query-groups"
+          "realm-admin"
         ]
       }
     }

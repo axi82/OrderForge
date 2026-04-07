@@ -30,7 +30,7 @@ var keycloakAdmin = builder.AddParameter("keycloak-admin", "admin", secret: fals
 var keycloakAdminPassword = builder.AddParameter("keycloak-admin-password", "admin", secret: true);
 var keycloakAdminApiSecret = builder.AddParameter(
     "keycloak-admin-api-secret",
-    "orderforge-admin-api-dev-secret-change-in-prod",
+    "m1WoItym1YwlLGfuPSx4ZVqN6xqgSq0O",
     secret: true);
 var keycloakThemesDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Keycloak", "themes"));
 var keycloakBuilder = builder.AddKeycloakContainer(
@@ -53,6 +53,9 @@ var keycloakBuilder = builder.AddKeycloakContainer(
 // Startup --import-realm runs only if the realm is not already in the Keycloak DB. With a persistent volume, changing
 // orderforge-realm.json alone does not refresh Keycloak. To restore from git: stop AppHost, run scripts/reset-keycloak-dev.ps1
 // (or docker volume rm orderforge-keycloak-data), then start again.
+// If create-company returns 403 from Keycloak on POST .../organizations, the service account user
+// service-account-orderforge-admin-api is missing realm-management client roles: assign realm-admin or manage-realm
+// (Clients -> orderforge-admin-api -> Service account roles -> realm-management).
 var keycloak = File.Exists(keycloakRealmImportPath)
     ? keycloakBuilder.WithImport(keycloakRealmImportPath)
     : keycloakBuilder;

@@ -6,7 +6,12 @@ public interface IKeycloakAdminService
 
     Task AssignRealmRoleAsync(string userId, string roleName, CancellationToken cancellationToken = default);
 
-    Task<KeycloakOrganizationResult> CreateOrganizationAsync(string organizationName, string? displayName, CancellationToken cancellationToken = default);
+    /// <param name="organizationInternetDomain">Email-style domain for the org (e.g. acme.com). Keycloak requires at least one; if null/empty, a placeholder is generated.</param>
+    Task<KeycloakOrganizationResult> CreateOrganizationAsync(
+        string organizationName,
+        string? displayName,
+        string? organizationInternetDomain,
+        CancellationToken cancellationToken = default);
 
     Task AddUserToOrganizationAsync(string organizationId, string userId, CancellationToken cancellationToken = default);
 

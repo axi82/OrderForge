@@ -35,9 +35,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: start-dev --http-port=8080 --hostname-strict=false
+    # --import-realm: applies orderforge-realm.json on first use (client orderforge-admin-api must have service accounts).
+    # If the realm already exists in the Keycloak DB, enable service accounts on orderforge-admin-api and assign
+    # realm-management client role realm-admin (or manage-realm) to user service-account-orderforge-admin-api.
+    command: start-dev --http-port=8080 --hostname-strict=false --import-realm
     volumes:
       - ./OrderForge.AppHost/Keycloak/themes:/opt/keycloak/themes:ro
+      - ./OrderForge.AppHost/Keycloak/orderforge-realm.json:/opt/keycloak/data/import/orderforge-realm.json:ro
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB_NAME}

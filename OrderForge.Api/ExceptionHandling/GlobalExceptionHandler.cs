@@ -58,11 +58,14 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
                     ? kax.StatusCode.Value
                     : StatusCodes.Status502BadGateway;
                 httpContext.Response.StatusCode = statusCode;
+                var kcDetail = string.IsNullOrWhiteSpace(kax.ResponseBody)
+                    ? kax.Message
+                    : $"{kax.Message}. Keycloak: {kax.ResponseBody}";
                 await httpContext.Response.WriteAsJsonAsync(
                     new ProblemDetails
                     {
                         Title = "Identity provider error",
-                        Detail = kax.Message,
+                        Detail = kcDetail,
                         Status = statusCode
                     },
                     cancellationToken);
