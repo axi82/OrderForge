@@ -281,6 +281,175 @@ public sealed class KeycloakAdminService(
         }
     }
 
+    public async Task<IReadOnlyList<KeycloakRealmUserBrief>> SearchRealmUsersAsync(
+        int first,
+        int max,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        if (first < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(first));
+        }
+
+        if (max <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(max));
+        }
+
+        var realm = Uri.EscapeDataString(_options.Realm);
+        var qs = new List<string>
+        {
+            "briefRepresentation=true",
+            $"first={first}",
+            $"max={max}"
+        };
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            qs.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        var url = $"admin/realms/{realm}/users?{string.Join('&', qs)}";
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var message = await CreateRequestAsync(HttpMethod.Get, url, cancellationToken);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "List realm users failed.", cancellationToken).ConfigureAwait(false);
+        }
+
+        var users = await response.Content.ReadFromJsonAsync<List<RealmUserBriefRepresentation>>(JsonCamel, cancellationToken)
+            .ConfigureAwait(false);
+        if (users is null || users.Count == 0)
+        {
+            return [];
+        }
+
+        return users
+            .Where(u => !string.IsNullOrEmpty(u.Id))
+            .Select(u => new KeycloakRealmUserBrief(
+                u.Id!,
+                u.Username,
+                u.Email,
+                u.FirstName,
+                u.LastName,
+                u.Enabled ?? false,
+                u.ServiceAccountClientId))
+            .ToList();
+    }
+
+    public async Task<int> CountRealmUsersAsync(string? search, CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        var realm = Uri.EscapeDataString(_options.Realm);
+        var url = string.IsNullOrWhiteSpace(search)
+            ? $"admin/realms/{realm}/users/count"
+            : $"admin/realms/{realm}/users/count?search={Uri.EscapeDataString(search)}";
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var message = await CreateRequestAsync(HttpMethod.Get, url, cancellationToken);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "Count realm users failed.", cancellationToken).ConfigureAwait(false);
+        }
+
+        var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (!int.TryParse(text.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n))
+        {
+            throw new KeycloakAdminException("Keycloak users count response was not an integer.");
+        }
+
+        return n;
+    }
+
+    public async Task<IReadOnlyList<string>> GetOrganizationNamesForUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        var realm = Uri.EscapeDataString(_options.Realm);
+        var uid = Uri.EscapeDataString(userId);
+        var url =
+            $"admin/realms/{realm}/organizations/members/{uid}/organizations?briefRepresentation=true";
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var message = await CreateRequestAsync(HttpMethod.Get, url, cancellationToken);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return [];
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "List organizations for user failed.", cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        var orgs = await response.Content.ReadFromJsonAsync<List<OrganizationRepresentation>>(JsonCamel, cancellationToken)
+            .ConfigureAwait(false);
+        if (orgs is null || orgs.Count == 0)
+        {
+            return [];
+        }
+
+        return orgs
+            .Select(o => o.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public async Task<DateTime?> GetLatestSessionLastAccessUtcAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        var realm = Uri.EscapeDataString(_options.Realm);
+        var uid = Uri.EscapeDataString(userId);
+        var url = $"admin/realms/{realm}/users/{uid}/sessions";
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var message = await CreateRequestAsync(HttpMethod.Get, url, cancellationToken);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "List user sessions failed.", cancellationToken).ConfigureAwait(false);
+        }
+
+        var sessions = await response.Content.ReadFromJsonAsync<List<UserSessionRepresentation>>(JsonCamel, cancellationToken)
+            .ConfigureAwait(false);
+        if (sessions is null || sessions.Count == 0)
+        {
+            return null;
+        }
+
+        long? maxMs = null;
+        foreach (var s in sessions)
+        {
+            if (s.LastAccess is { } ms && (maxMs is null || ms > maxMs))
+            {
+                maxMs = ms;
+            }
+        }
+
+        if (maxMs is null)
+        {
+            return null;
+        }
+
+        return DateTimeOffset.FromUnixTimeMilliseconds(maxMs.Value).UtcDateTime;
+    }
+
     private void ValidateConfiguration()
     {
         if (string.IsNullOrWhiteSpace(_options.BaseUrl))
@@ -500,5 +669,21 @@ public sealed class KeycloakAdminService(
 
         [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
+    }
+
+    private sealed class RealmUserBriefRepresentation
+    {
+        public string? Id { get; set; }
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public bool? Enabled { get; set; }
+        public string? ServiceAccountClientId { get; set; }
+    }
+
+    private sealed class UserSessionRepresentation
+    {
+        public long? LastAccess { get; set; }
     }
 }

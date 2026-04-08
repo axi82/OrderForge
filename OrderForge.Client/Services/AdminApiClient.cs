@@ -11,6 +11,12 @@ public interface IAdminApiClient
     Task<OrganisationDto> CreateCompanyAsync(CreateCustomerCompanyRequest request, CancellationToken cancellationToken = default);
 
     Task<InviteUserResponse> InviteUserAsync(InviteUserRequest request, CancellationToken cancellationToken = default);
+
+    Task<AdminUsersListResult> GetUsersAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class AdminApiClient(HttpClient http) : IAdminApiClient
@@ -48,6 +54,24 @@ public sealed class AdminApiClient(HttpClient http) : IAdminApiClient
         var body = await response.Content.ReadFromJsonAsync<InviteUserResponse>(JsonOptions, cancellationToken)
             .ConfigureAwait(false);
         return body ?? throw new InvalidOperationException("API returned an empty body.");
+    }
+
+    public async Task<AdminUsersListResult> GetUsersAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        var qs = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            qs += $"&search={Uri.EscapeDataString(search.Trim())}";
+        }
+
+        var result = await http
+            .GetFromJsonAsync<AdminUsersListResult>($"api/admin/users?{qs}", JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        return result ?? new AdminUsersListResult();
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)

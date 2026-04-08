@@ -24,4 +24,24 @@ public interface IKeycloakAdminService
     Task<CreateKeycloakUserResult> InviteUserToCompanyAsync(InviteUserToCompanyRequest request, CancellationToken cancellationToken = default);
 
     Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists realm users (brief). Maps to Keycloak <c>GET .../users</c>.</summary>
+    Task<IReadOnlyList<KeycloakRealmUserBrief>> SearchRealmUsersAsync(
+        int first,
+        int max,
+        string? search,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Count of users matching Keycloak criteria (may include service accounts).</summary>
+    Task<int> CountRealmUsersAsync(string? search, CancellationToken cancellationToken = default);
+
+    /// <summary>Organization display names for a user (Keycloak Organizations).</summary>
+    Task<IReadOnlyList<string>> GetOrganizationNamesForUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Latest <c>lastAccess</c> across user sessions, or null if none.</summary>
+    Task<DateTime?> GetLatestSessionLastAccessUtcAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
 }

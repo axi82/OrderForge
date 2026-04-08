@@ -21,3 +21,13 @@ public sealed record InviteUserToCompanyRequest(
 public sealed record CreateKeycloakUserResult(string UserId, string Username);
 
 public sealed record KeycloakOrganizationResult(string Id, string Name);
+
+/// <summary>Realm user row from Keycloak Admin <c>GET .../users</c> (brief representation).</summary>
+public sealed record KeycloakRealmUserBrief(
+    string Id,
+    string? Username,
+    string? Email,
+    string? FirstName,
+    string? LastName,
+    bool Enabled,
+    string? ServiceAccountClientId);

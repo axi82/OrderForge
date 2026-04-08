@@ -10,6 +10,19 @@ namespace OrderForge.Api.Controllers;
 [Route("api/admin/users")]
 public sealed class AdminUsersController(ISender sender) : ControllerBase
 {
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
+    [ProducesResponseType(typeof(AdminUsersListResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdminUsersListResponse>> GetUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(new GetAdminUsersQuery(page, pageSize, search), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("invite")]
     [Authorize(Policy = AuthorizationPolicies.InviteUsers)]
     [ProducesResponseType(typeof(InviteUserToCompanyResult), StatusCodes.Status200OK)]

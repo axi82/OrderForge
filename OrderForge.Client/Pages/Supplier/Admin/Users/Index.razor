@@ -1,13 +1,13 @@
 ﻿@page "/admin/users"
 @attribute [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
-@inject IAdminApiClient AdminApi;
+@inject IAdminApiClient AdminApi
 
 <PageTitle> Users (admin)</PageTitle>
 
 <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
     <div>
         <h1 class="text-2xl font-semibold">Users</h1>
-        <p class="text-sm text-gray-500">User accounts with access to your site.</p>
+        <p class="text-sm text-gray-500">Human realm users (service accounts excluded).</p>
     </div>
     <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
         <Authorized>
@@ -17,6 +17,24 @@
             </NavLink>
         </Authorized>
     </AuthorizeView>
+</div>
+
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+    <div class="flex min-w-[12rem] flex-1 flex-col gap-1">
+        <label class="text-xs font-medium text-gray-600" for="user-search">Search</label>
+        <input id="user-search"
+               class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+               @bind="searchText"
+               @bind:event="oninput"
+               placeholder="Name, email, or username"
+               disabled="@loading" />
+    </div>
+    <button type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+            disabled="@loading"
+            @onclick="ApplySearchAsync">
+        Search
+    </button>
 </div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
@@ -30,13 +48,11 @@
 {
     <p class="text-gray-500">Loading…</p>
 }
-
-else if (items.Count == 0)
+else if (result is not null && result.TotalCount == 0)
 {
     <p class="text-gray-500">No users found.</p>
 }
-
-else
+else if (result is not null)
 {
     <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm align-middle [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left">
@@ -44,42 +60,139 @@ else
                 <tr>
                     <th>First name</th>
                     <th>Last name</th>
-                    <th>Company</th>
+                    <th>Organisation</th>
+                    <th>Email</th>
                     <th>Status</th>
-                    <th>Last login</th>
+                    <th>Last logged in</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var o in items)
+                @foreach (var row in result.Items)
                 {
                     <tr>
-                        <td>@o.Id</td>
-                        <td>@o.Name</td>
-                        <td><code class="text-sm">@(o.KeycloakOrganizationId ?? "—")</code></td>
-                        <td>@o.Status</td>
+                        <td>@(string.IsNullOrEmpty(row.FirstName) ? "—" : row.FirstName)</td>
+                        <td>@(string.IsNullOrEmpty(row.LastName) ? "—" : row.LastName)</td>
+                        <td>@(string.IsNullOrEmpty(row.OrganisationNames) ? "—" : row.OrganisationNames)</td>
+                        <td>@(string.IsNullOrEmpty(row.Email) ? "—" : row.Email)</td>
+                        <td>@(row.Enabled ? "Enabled" : "Disabled")</td>
+                        <td>@(row.LastLoginUtc is { } t ? t.ToLocalTime().ToString("g") : "—")</td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
+
+    <div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-600">
+            Showing @ShowingStart–@ShowingEnd of @result.TotalCount
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+            <label class="text-sm text-gray-600" for="page-size">Rows per page</label>
+            <select id="page-size"
+                    class="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm shadow-sm"
+                    disabled="@loading"
+                    value="@pageSize"
+                    @onchange="OnPageSizeChanged">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+            <button type="button"
+                    class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    disabled="@loading || page <= 1"
+                    @onclick="GoToPrevPageAsync">
+                Previous
+            </button>
+            <span class="text-sm text-gray-600">Page @(page) of @MaxPage</span>
+            <button type="button"
+                    class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    disabled="@loading || page >= MaxPage"
+                    @onclick="GoToNextPageAsync">
+                Next
+            </button>
+        </div>
+    </div>
 }
 
-
 @code {
-    private readonly List<OrganisationDto> items = [];
+    private const int DefaultPageSize = 25;
+
+    private AdminUsersListResult? result;
+    private string searchText = string.Empty;
+    private int page = 1;
+    private int pageSize = DefaultPageSize;
     private bool loading = true;
     private string? errorMessage;
 
+    private int MaxPage => result is null || result.TotalCount == 0
+        ? 1
+        : Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)pageSize));
+
+    private int ShowingStart => result is null || result.TotalCount == 0 ? 0 : (page - 1) * pageSize + 1;
+
+    private int ShowingEnd => result is null ? 0 : Math.Min(page * pageSize, result.TotalCount);
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadAsync();
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        page = 1;
+        await LoadAsync();
+    }
+
+    private async Task GoToPrevPageAsync()
+    {
+        if (page <= 1)
+        {
+            return;
+        }
+
+        page--;
+        await LoadAsync();
+    }
+
+    private async Task GoToNextPageAsync()
+    {
+        if (page >= MaxPage)
+        {
+            return;
+        }
+
+        page++;
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string s && int.TryParse(s, out var n) && n is 10 or 25 or 50)
+        {
+            pageSize = n;
+            page = 1;
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        errorMessage = null;
         try
         {
-            items.Clear();
-            items.AddRange(await AdminApi.GetCompaniesAsync());
+            var search = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
+            result = await AdminApi.GetUsersAsync(page, pageSize, search);
+            if (page > MaxPage && MaxPage >= 1)
+            {
+                page = MaxPage;
+                result = await AdminApi.GetUsersAsync(page, pageSize, search);
+            }
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
+            result = null;
         }
         finally
         {

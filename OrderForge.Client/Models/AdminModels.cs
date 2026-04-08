@@ -41,3 +41,33 @@ public sealed class InviteUserResponse
 
     public string Username { get; set; } = string.Empty;
 }
+
+public sealed class AdminUsersListResult
+{
+    public List<AdminUserRow> Items { get; set; } = [];
+
+    public int Page { get; set; }
+
+    public int PageSize { get; set; }
+
+    public int TotalCount { get; set; }
+
+    public string? Search { get; set; }
+}
+
+public sealed class AdminUserRow
+{
+    public string Id { get; set; } = string.Empty;
+
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
+    public string? Email { get; set; }
+
+    public bool Enabled { get; set; }
+
+    public string OrganisationNames { get; set; } = string.Empty;
+
+    public DateTime? LastLoginUtc { get; set; }
+}
