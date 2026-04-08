@@ -1,0 +1,89 @@
+﻿@page "/admin/users"
+@attribute [Authorize(Policy = AuthorizationPolicies.SupplierAdmin)]
+@inject IAdminApiClient AdminApi;
+
+<PageTitle> Users (admin)</PageTitle>
+
+<div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold">Users</h1>
+        <p class="text-sm text-gray-500">User accounts with access to your site.</p>
+    </div>
+    <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
+        <Authorized>
+            <NavLink class="inline-flex shrink-0 items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark no-underline"
+                     href="@Routes.Admin.UsersCreate">
+                Create user
+            </NavLink>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (loading)
+{
+    <p class="text-gray-500">Loading…</p>
+}
+
+else if (items.Count == 0)
+{
+    <p class="text-gray-500">No users found.</p>
+}
+
+else
+{
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm align-middle [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left">
+            <thead>
+                <tr>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Last login</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in items)
+                {
+                    <tr>
+                        <td>@o.Id</td>
+                        <td>@o.Name</td>
+                        <td><code class="text-sm">@(o.KeycloakOrganizationId ?? "—")</code></td>
+                        <td>@o.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+
+@code {
+    private readonly List<OrganisationDto> items = [];
+    private bool loading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            items.Clear();
+            items.AddRange(await AdminApi.GetCompaniesAsync());
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

@@ -33,6 +33,7 @@ public static class Routes
         public const string Companies = "admin/companies";
         public const string CompaniesCreate = "admin/companies/create";
         public const string Users = "admin/users";
+        public const string UsersCreate = "admin/users/create";
         public const string UsersInvite = "admin/users/invite";
     }
 
