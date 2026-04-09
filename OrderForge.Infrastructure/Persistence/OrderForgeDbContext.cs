@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrderForge.Domain.Organisations;
+using OrderForge.Domain.Products;
 
 namespace OrderForge.Infrastructure.Persistence;
 
@@ -13,6 +14,8 @@ public class OrderForgeDbContext : DbContext
     public DbSet<Organisation> Organisations => Set<Organisation>();
 
     public DbSet<OrganisationStatus> OrganisationStatuses => Set<OrganisationStatus>();
+
+    public DbSet<Product> Products => Set<Product>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

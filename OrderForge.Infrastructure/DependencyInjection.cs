@@ -5,7 +5,9 @@ using Microsoft.Extensions.Options;
 using OrderForge.Application.Common;
 using OrderForge.Application.Common.Services;
 using OrderForge.Application.Organisations;
+using OrderForge.Application.Products;
 using OrderForge.Domain.Organisations;
+using OrderForge.Domain.Products;
 using OrderForge.Infrastructure.Keycloak;
 using OrderForge.Infrastructure.Persistence;
 using OrderForge.Infrastructure.Persistence.Repositories;
@@ -29,6 +31,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IOrganisationRepository, OrganisationRepository>();
         services.AddScoped<IRepository<Organisation>>(sp => sp.GetRequiredService<IOrganisationRepository>());
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IRepository<Product>>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<IOrganisationStatusLookup, OrganisationStatusLookup>();
 
         services.Configure<KeycloakAdminOptions>(configuration.GetSection(KeycloakAdminOptions.SectionName));

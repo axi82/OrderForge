@@ -1,0 +1,359 @@
+@page "/admin/products"
+@attribute [Authorize(Policy = AuthorizationPolicies.SupplierStaff)]
+@inject IAdminApiClient AdminApi
+@inject IJSRuntime Js
+
+<PageTitle>Products (admin)</PageTitle>
+
+<div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold">Products</h1>
+        <p class="text-sm text-gray-500">Catalog items available for ordering.</p>
+    </div>
+</div>
+
+<AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
+    <Authorized Context="supplierAdminAuth">
+        <div class="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-900">
+                Add product
+            </div>
+            <div class="p-4">
+                @if (!string.IsNullOrEmpty(createErrorMessage))
+                {
+                    <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800" role="alert">
+                        @createErrorMessage
+                    </div>
+                }
+                <EditForm Model="createModel" OnValidSubmit="OnCreateSubmitAsync">
+                    <div class="-mx-2 flex flex-wrap gap-y-2">
+                        <div class="w-full px-2 md:w-1/2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">SKU *</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.Sku"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.Name"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Short description</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.ShortDescription"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Description</label>
+                            <InputTextArea
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.Description"
+                                rows="4"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Brand</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.Brand"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/4">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Cost price</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.CostPrice"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/4">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Base price</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.BasePrice"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="flex w-full items-center px-2 pt-2 md:w-1/4">
+                            <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-700">
+                                <InputCheckbox @bind-Value="createModel.IsActive" disabled="@saving" />
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button
+                            type="submit"
+                            class="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent-ring disabled:opacity-50"
+                            disabled="@saving"
+                        >
+                            @(saving ? "Saving…" : "Add product")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+    <div class="flex min-w-[12rem] flex-1 flex-col gap-1">
+        <label class="text-xs font-medium text-gray-600" for="product-search">Search</label>
+        <input id="product-search"
+               class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+               @bind="searchText"
+               @bind:event="oninput"
+               placeholder="SKU, name, or brand"
+               disabled="@loading" />
+    </div>
+    <button type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+            disabled="@loading"
+            @onclick="ApplySearchAsync">
+        Search
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (loading)
+{
+    <p class="text-gray-500">Loading…</p>
+}
+else if (result is not null && result.TotalCount == 0)
+{
+    <p class="text-gray-500">No products yet.</p>
+}
+else if (result is not null)
+{
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm align-middle [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Name</th>
+                    <th>Brand</th>
+                    <th>Cost</th>
+                    <th>Base</th>
+                    <th>Active</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in result.Items)
+                {
+                    <tr>
+                        <td><code class="text-sm">@row.Sku</code></td>
+                        <td>@row.Name</td>
+                        <td>@(string.IsNullOrEmpty(row.Brand) ? "—" : row.Brand)</td>
+                        <td>@row.CostPrice.ToString("N2")</td>
+                        <td>@row.BasePrice.ToString("N2")</td>
+                        <td>@(row.IsActive ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
+                                <Authorized Context="deleteAuth">
+                                    <button
+                                        type="button"
+                                        class="rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                        disabled="@(deletingId == row.Id)"
+                                        @onclick="() => DeleteAsync(row)">
+                                        @(deletingId == row.Id ? "…" : "Delete")
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-600">
+            Showing @ShowingStart–@ShowingEnd of @result.TotalCount
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+            <label class="text-sm text-gray-600" for="product-page-size">Rows per page</label>
+            <select id="product-page-size"
+                    class="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm shadow-sm"
+                    disabled="@loading"
+                    value="@pageSize"
+                    @onchange="OnPageSizeChanged">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+            <button type="button"
+                    class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    disabled="@loading || page <= 1"
+                    @onclick="GoToPrevPageAsync">
+                Previous
+            </button>
+            <span class="text-sm text-gray-600">Page @(page) of @MaxPage</span>
+            <button type="button"
+                    class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    disabled="@loading || page >= MaxPage"
+                    @onclick="GoToNextPageAsync">
+                Next
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private const int DefaultPageSize = 25;
+
+    private AdminProductsListResult? result;
+    private string searchText = string.Empty;
+    private int page = 1;
+    private int pageSize = DefaultPageSize;
+    private bool loading = true;
+    private string? errorMessage;
+    private string? createErrorMessage;
+    private bool saving;
+    private int? deletingId;
+    private readonly CreateProductRequest createModel = new();
+
+    private int MaxPage => result is null || result.TotalCount == 0
+        ? 1
+        : Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)pageSize));
+
+    private int ShowingStart => result is null || result.TotalCount == 0 ? 0 : (page - 1) * pageSize + 1;
+
+    private int ShowingEnd => result is null ? 0 : Math.Min(page * pageSize, result.TotalCount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        page = 1;
+        await LoadAsync();
+    }
+
+    private async Task GoToPrevPageAsync()
+    {
+        if (page <= 1)
+        {
+            return;
+        }
+
+        page--;
+        await LoadAsync();
+    }
+
+    private async Task GoToNextPageAsync()
+    {
+        if (page >= MaxPage)
+        {
+            return;
+        }
+
+        page++;
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string s && int.TryParse(s, out var n) && n is 10 or 25 or 50)
+        {
+            pageSize = n;
+            page = 1;
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        errorMessage = null;
+        try
+        {
+            var search = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
+            result = await AdminApi.GetProductsAsync(page, pageSize, search);
+            if (page > MaxPage && MaxPage >= 1)
+            {
+                page = MaxPage;
+                result = await AdminApi.GetProductsAsync(page, pageSize, search);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            result = null;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task OnCreateSubmitAsync()
+    {
+        createErrorMessage = null;
+        saving = true;
+        try
+        {
+            await AdminApi.CreateProductAsync(createModel);
+            createModel.Sku = string.Empty;
+            createModel.Name = string.Empty;
+            createModel.ShortDescription = null;
+            createModel.Description = null;
+            createModel.Brand = null;
+            createModel.CostPrice = 0;
+            createModel.BasePrice = 0;
+            createModel.IsActive = true;
+            page = 1;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            createErrorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task DeleteAsync(ProductDto row)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", $"Delete product \"{row.Name}\" (SKU {row.Sku})?"))
+        {
+            return;
+        }
+
+        deletingId = row.Id;
+        errorMessage = null;
+        try
+        {
+            await AdminApi.DeleteProductAsync(row.Id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            deletingId = null;
+        }
+    }
+}

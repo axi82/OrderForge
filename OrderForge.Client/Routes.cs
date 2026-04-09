@@ -35,6 +35,8 @@ public static class Routes
         public const string Users = "admin/users";
         public const string UsersCreate = "admin/users/create";
         public const string UsersInvite = "admin/users/invite";
+
+        public const string Products = "admin/products";
     }
 
     public static class Supplier

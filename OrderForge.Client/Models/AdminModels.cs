@@ -55,6 +55,65 @@ public sealed class AdminUsersListResult
     public string? Search { get; set; }
 }
 
+public sealed class AdminProductsListResult
+{
+    public List<ProductDto> Items { get; set; } = [];
+
+    public int Page { get; set; }
+
+    public int PageSize { get; set; }
+
+    public int TotalCount { get; set; }
+
+    public string? Search { get; set; }
+}
+
+public sealed class ProductDto
+{
+    public int Id { get; set; }
+
+    public string Sku { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
+
+    public string? ShortDescription { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? Brand { get; set; }
+
+    public decimal CostPrice { get; set; }
+
+    public decimal BasePrice { get; set; }
+
+    public bool IsActive { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
+
+    public string CreatedBy { get; set; } = string.Empty;
+}
+
+public sealed class CreateProductRequest
+{
+    public string Sku { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
+
+    public string? ShortDescription { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? Brand { get; set; }
+
+    public decimal CostPrice { get; set; }
+
+    public decimal BasePrice { get; set; }
+
+    public bool IsActive { get; set; } = true;
+}
+
 public sealed class AdminUserRow
 {
     public string Id { get; set; } = string.Empty;
