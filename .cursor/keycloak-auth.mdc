@@ -1,3 +1,14 @@
 ---
+description: "Order Forge Keycloak authentication and realm configuration"
 alwaysApply: true
 ---
+
+Order Forge uses Keycloak (realm: order-forge) as the identity provider.
+
+- Realm name: order-forge
+- Client ID: order-forge-client (confidential client)
+- We support Authorization Code Flow (recommended)
+- All authentication must map Keycloak JWT claims (roles, organization membership) to our EF Core entities
+- Use ASP.NET Core Identity + OpenIdConnect (or manual token handling for Direct Grant)
+- Tokens must be validated server-side; never expose client secret in frontend
+- Docker setup automatically imports order-forge-realm.json on startup
