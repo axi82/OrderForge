@@ -13,7 +13,7 @@ public sealed class AppNavigator
     }
 
     public void GoToSignInPage(string returnUrl) =>
-        _navigation.NavigateTo(Routes.Auth.SignInWithReturnUrl(returnUrl));
+        _navigation.NavigateTo(Routes.Auth.OidcLoginWithReturnUrl(returnUrl));
 
     public void BeginOidcSignIn(string returnUrl) =>
         _navigation.NavigateTo(Routes.Auth.OidcLoginWithReturnUrl(returnUrl));
