@@ -29,6 +29,7 @@
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
   "loginTheme": "order-forge",
+  "emailTheme": "orderforge-email",
   "accountTheme": "keycloak.v2",
   "sslRequired": "none",
   "registrationAllowed": true,

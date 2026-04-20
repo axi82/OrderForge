@@ -1,14 +1,53 @@
-html,
-body {
+/*
+ * Viewport / whitespace: avoid stacking min-height: 100vh on nested wrappers (.pf-v5-c-login__*,
+ * .forge-login-page, .forge-login-right) — that often exceeds 100% of the viewport and forces a
+ * vertical scrollbar. Use one flex column chain from body with min-height: 0 on flex children so
+ * the grid can shrink; anchor height with 100dvh on body (fallback 100% / 100vh).
+ */
+html {
   height: 100%;
   margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  color-scheme: light only;
+  box-sizing: border-box;
+}
+
+html *,
+html *::before,
+html *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background: #f8fafc !important;
   color: #0f172a !important;
   font-family: Inter, Arial, sans-serif;
+  overflow-x: hidden;
+  /* Scroll lives in .pf-v5-c-login__main-body so the document does not grow past the viewport. */
+  overflow-y: hidden;
 }
 
-html {
-  color-scheme: light only;
+main {
+  margin: 0;
+}
+
+/* Older Keycloak layouts; harmless if absent. */
+#kc-content-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
 }
 
 html.login-pf,
@@ -27,6 +66,41 @@ body.pf-v5-c-login,
   color: #0f172a !important;
   box-shadow: none !important;
   border: 0 !important;
+}
+
+/*
+ * keycloak.v2 template: <body><div class="pf-v5-c-login"><div class="pf-v5-c-login__container">
+ * <header id="kc-header"/> <main class="pf-v5-c-login__main">…</main></div></div>
+ * (There is no #kc-content-wrapper in current v2.)
+ */
+body > .pf-v5-c-login {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Title + locale row: PatternFly adds vertical padding; our forge templates duplicate the title in-card. */
+.pf-v5-c-login__main-header {
+  flex: 0 0 auto;
+  margin: 0 !important;
+  padding: 0.75rem 1rem !important;
+}
+
+main.pf-v5-c-login__main:has(.forge-login-page) #kc-page-title {
+  display: none;
+}
+
+main.pf-v5-c-login__main:has(.forge-login-page) .pf-v5-c-login__main-header {
+  justify-content: flex-end;
+  padding: 0.5rem 1rem !important;
+}
+
+.pf-v5-c-login__main-footer {
+  flex: 0 0 auto;
 }
 
 :root {
@@ -52,27 +126,44 @@ body.pf-v5-c-login,
 .pf-v5-c-login__container {
   width: 100% !important;
   max-width: none !important;
-  min-height: 100vh !important;
+  flex: 1 1 auto;
+  min-height: 0 !important;
   padding: 0 !important;
-  display: block !important;
+  display: flex !important;
+  flex-direction: column;
 }
 
 .pf-v5-c-login__main {
   width: 100% !important;
-  min-height: 100vh !important;
+  flex: 1 1 auto;
+  min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
+  display: flex !important;
+  flex-direction: column;
 }
 
 .pf-v5-c-login__main-body {
   padding: 0 !important;
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  display: flex;
+  flex-direction: column;
+  /* If the form is taller than the viewport, scroll here — not on html/body. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .forge-login-page {
-  min-height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   display: grid;
   grid-template-columns: minmax(520px, 1fr) 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
   background: var(--forge-bg);
 }
 
@@ -82,6 +173,7 @@ body.pf-v5-c-login,
   justify-content: center;
   padding: 48px 56px;
   background: #f8fafc;
+  min-height: 0;
 }
 
 .forge-login-card {
@@ -204,6 +296,61 @@ body.pf-v5-c-login,
   margin-top: 8px;
 }
 
+.forge-actions--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.forge-actions--stack .forge-submit {
+  width: 100%;
+}
+
+.forge-link--centered {
+  display: block;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.forge-actions--split {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.forge-actions--split .forge-submit,
+.forge-actions--split .forge-button-secondary {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.forge-button-secondary {
+  height: 52px;
+  border-radius: 10px;
+  border: 1px solid var(--forge-border);
+  background: #fff;
+  color: var(--forge-navy-soft);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.forge-button-secondary:hover {
+  border-color: var(--forge-teal);
+  color: var(--forge-teal-dark);
+}
+
+.forge-password-extras {
+  margin: 4px 0 18px;
+}
+
+.forge-login-card .forge-password-extras .pf-v5-c-check__label {
+  color: var(--forge-muted);
+  font-size: 0.95rem;
+}
+
 .forge-submit {
   width: 100%;
   height: 52px;
@@ -244,7 +391,8 @@ body.pf-v5-c-login,
 
 .forge-login-right {
   position: relative;
-  min-height: 100vh;
+  min-height: 0;
+  align-self: stretch;
   background:
     linear-gradient(rgb(15 23 42 / 58%), rgb(15 23 42 / 58%)),
     url("../img/BKLHxgbYFDI-unsplash.jpg") center center / cover no-repeat;
