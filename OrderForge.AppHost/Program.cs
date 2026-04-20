@@ -50,6 +50,8 @@ var keycloakBuilder = builder.AddKeycloakContainer(
 
 // Remember-me: realm JSON enables Keycloak login "Remember me" + SSO session idle/max (seconds). Tune under Keycloak Admin → Realm settings → Sessions / Tokens.
 // Optional: add offline_access scope on the Blazor client and persist refresh tokens only if you implement custom token storage (stock WASM auth uses browser storage as-is).
+// Realm SMTP (Brevo) is in orderforge-realm.json; leave password empty in git and set the Brevo SMTP key under
+// Keycloak Admin → Realm settings → Email, unless you re-import into a fresh volume with a local-only password.
 // Startup --import-realm runs only if the realm is not already in the Keycloak DB. With a persistent volume, changing
 // orderforge-realm.json alone does not refresh Keycloak. To restore from git: stop AppHost, run scripts/reset-keycloak-dev.ps1
 // (or docker volume rm orderforge-keycloak-data), then start again.

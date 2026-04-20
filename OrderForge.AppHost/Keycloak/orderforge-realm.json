@@ -1712,7 +1712,17 @@
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
-  "smtpServer": {},
+  "smtpServer": {
+    "host": "smtp-relay.brevo.com",
+    "port": "587",
+    "from": "no-reply@orderforge.co.uk",
+    "fromDisplayName": "Order Forge",
+    "auth": "true",
+    "user": "a89676001@smtp-brevo.com",
+    "password": "",
+    "ssl": "false",
+    "starttls": "true"
+  },
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"
