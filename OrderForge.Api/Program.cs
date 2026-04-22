@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
 using OrderForge.Api.ExceptionHandling;
 using OrderForge.Api.Logging;
@@ -196,8 +197,12 @@ try
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
         await db.Database.MigrateAsync();
-        await DevelopmentDataSeeder.SeedAsync(db);
-        
+        var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DevelopmentSeed");
+        // Sample product CSV: Development *or* local Aspire (API often runs as Production when launchProfile is null).
+        await DevelopmentDataSeeder.SeedAsync(
+            db,
+            importDevelopmentProductCsv: runUnderAspire || app.Environment.IsDevelopment(),
+            seedLogger);
 
         app.UseSwagger();
         app.UseSwaggerUI(options =>

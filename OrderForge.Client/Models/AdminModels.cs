@@ -74,6 +74,8 @@ public sealed class ProductDto
 
     public string Sku { get; set; } = string.Empty;
 
+    public string ProductCode { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty;
 
     public string? ShortDescription { get; set; }
@@ -81,6 +83,22 @@ public sealed class ProductDto
     public string? Description { get; set; }
 
     public string? Brand { get; set; }
+
+    public string? CommodityCodeDescription { get; set; }
+
+    public string? SupplierAccountCode { get; set; }
+
+    public string? PartNumber { get; set; }
+
+    public decimal QuantityInStock { get; set; }
+
+    public decimal QuantityAllocated { get; set; }
+
+    public decimal QuantityOnOrder { get; set; }
+
+    public decimal FreeStock { get; set; }
+
+    public string? Barcode { get; set; }
 
     public decimal CostPrice { get; set; }
 
@@ -99,6 +117,8 @@ public sealed class CreateProductRequest
 {
     public string Sku { get; set; } = string.Empty;
 
+    public string ProductCode { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty;
 
     public string? ShortDescription { get; set; }
@@ -106,6 +126,22 @@ public sealed class CreateProductRequest
     public string? Description { get; set; }
 
     public string? Brand { get; set; }
+
+    public string? CommodityCodeDescription { get; set; }
+
+    public string? SupplierAccountCode { get; set; }
+
+    public string? PartNumber { get; set; }
+
+    public decimal QuantityInStock { get; set; }
+
+    public decimal QuantityAllocated { get; set; }
+
+    public decimal QuantityOnOrder { get; set; }
+
+    public decimal FreeStock { get; set; }
+
+    public string? Barcode { get; set; }
 
     public decimal CostPrice { get; set; }
 

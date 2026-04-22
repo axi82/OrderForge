@@ -16,6 +16,15 @@ public sealed class ProductRepository(OrderForgeDbContext dbContext)
             .AnyAsync(p => p.Sku.ToLower() == normalized.ToLower(), cancellationToken);
     }
 
+    public async Task<bool> ExistsWithProductCodeAsync(string productCode, CancellationToken cancellationToken = default)
+    {
+        var normalized = productCode.Trim();
+        return await DbContext
+            .Set<Product>()
+            .AsNoTracking()
+            .AnyAsync(p => p.ProductCode.ToLower() == normalized.ToLower(), cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
@@ -29,8 +38,12 @@ public sealed class ProductRepository(OrderForgeDbContext dbContext)
             var term = search.Trim();
             query = query.Where(p =>
                 p.Sku.Contains(term)
+                || p.ProductCode.Contains(term)
                 || p.Name.Contains(term)
-                || (p.Brand != null && p.Brand.Contains(term)));
+                || (p.Brand != null && p.Brand.Contains(term))
+                || (p.PartNumber != null && p.PartNumber.Contains(term))
+                || (p.Barcode != null && p.Barcode.Contains(term))
+                || (p.SupplierAccountCode != null && p.SupplierAccountCode.Contains(term)));
         }
 
         var total = await query.CountAsync(cancellationToken);

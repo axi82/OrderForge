@@ -36,6 +36,14 @@
                             />
                         </div>
                         <div class="w-full px-2 md:w-1/2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Product code *</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.ProductCode"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/2">
                             <label class="mb-1 block text-sm font-medium text-gray-700">Name *</label>
                             <InputText
                                 class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -65,6 +73,70 @@
                             <InputText
                                 class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                 @bind-Value="createModel.Brand"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/3">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Commodity code</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.CommodityCodeDescription"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/3">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Supplier A/C</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.SupplierAccountCode"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/3">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Part no.</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.PartNumber"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/5">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Qty in stock</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.QuantityInStock"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/5">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Qty allocated</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.QuantityAllocated"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/5">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Qty on order</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.QuantityOnOrder"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/5">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Free stock</label>
+                            <InputNumber
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.FreeStock"
+                                disabled="@saving"
+                            />
+                        </div>
+                        <div class="w-full px-2 md:w-1/5">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">Barcode</label>
+                            <InputText
+                                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                @bind-Value="createModel.Barcode"
                                 disabled="@saving"
                             />
                         </div>
@@ -113,7 +185,7 @@
                class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                @bind="searchText"
                @bind:event="oninput"
-               placeholder="SKU, name, or brand"
+               placeholder="SKU, product code, name, part no., barcode…"
                disabled="@loading" />
     </div>
     <button type="button"
@@ -142,11 +214,18 @@ else if (result is not null && result.TotalCount == 0)
 else if (result is not null)
 {
     <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm align-middle [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left">
+        <table class="w-full border-collapse text-xs align-middle sm:text-sm [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-2 [&_th]:text-left">
             <thead>
                 <tr>
+                    <th>Product code</th>
                     <th>SKU</th>
                     <th>Name</th>
+                    <th>Part no.</th>
+                    <th>In stock</th>
+                    <th>Alloc.</th>
+                    <th>On order</th>
+                    <th>Free</th>
+                    <th>Barcode</th>
                     <th>Brand</th>
                     <th>Cost</th>
                     <th>Base</th>
@@ -158,8 +237,15 @@ else if (result is not null)
                 @foreach (var row in result.Items)
                 {
                     <tr>
-                        <td><code class="text-sm">@row.Sku</code></td>
-                        <td>@row.Name</td>
+                        <td><code class="text-xs sm:text-sm">@row.ProductCode</code></td>
+                        <td><code class="text-xs sm:text-sm">@row.Sku</code></td>
+                        <td class="max-w-[14rem] truncate" title="@row.Name">@row.Name</td>
+                        <td class="max-w-[8rem] truncate" title="@(row.PartNumber ?? "")">@(string.IsNullOrEmpty(row.PartNumber) ? "—" : row.PartNumber)</td>
+                        <td>@row.QuantityInStock.ToString("N2")</td>
+                        <td>@row.QuantityAllocated.ToString("N2")</td>
+                        <td>@row.QuantityOnOrder.ToString("N2")</td>
+                        <td>@row.FreeStock.ToString("N2")</td>
+                        <td class="max-w-[7rem] truncate font-mono text-xs" title="@(row.Barcode ?? "")">@(string.IsNullOrEmpty(row.Barcode) ? "—" : row.Barcode)</td>
                         <td>@(string.IsNullOrEmpty(row.Brand) ? "—" : row.Brand)</td>
                         <td>@row.CostPrice.ToString("N2")</td>
                         <td>@row.BasePrice.ToString("N2")</td>
@@ -313,10 +399,19 @@ else if (result is not null)
         {
             await AdminApi.CreateProductAsync(createModel);
             createModel.Sku = string.Empty;
+            createModel.ProductCode = string.Empty;
             createModel.Name = string.Empty;
             createModel.ShortDescription = null;
             createModel.Description = null;
             createModel.Brand = null;
+            createModel.CommodityCodeDescription = null;
+            createModel.SupplierAccountCode = null;
+            createModel.PartNumber = null;
+            createModel.QuantityInStock = 0;
+            createModel.QuantityAllocated = 0;
+            createModel.QuantityOnOrder = 0;
+            createModel.FreeStock = 0;
+            createModel.Barcode = null;
             createModel.CostPrice = 0;
             createModel.BasePrice = 0;
             createModel.IsActive = true;

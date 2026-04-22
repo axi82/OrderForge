@@ -10,7 +10,8 @@ var postgresUser = builder.AddParameter("postgres-user", "orderforge", secret: f
 var postgresPassword = builder.AddParameter("postgres-password", "orderforge", secret: true);
 
 var postgres = builder.AddPostgres("postgres", postgresUser, postgresPassword, port: 5432)
-    .WithDataVolume("orderforge-postgres-data");
+    .WithDataVolume("orderforge-postgres-data")
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var orderforgeDb = postgres.AddDatabase("orderforge");
 
