@@ -1,8 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Npgsql;
-
 namespace OrderForge.Infrastructure.Persistence;
 
 /// <summary>
@@ -14,8 +12,9 @@ namespace OrderForge.Infrastructure.Persistence;
 /// <item><c>ConnectionStrings:Default</c> from <c>OrderForge.Api/appsettings.json</c></item>
 /// <item>Built-in localhost default</item>
 /// </list>
-/// If Postgres is published on a random host port (e.g. Docker <c>59212:5432</c>), set
-/// <c>ORDERFORGE_POSTGRES_HOST_PORT</c> to that host port to rewrite the connection string port.
+/// If Postgres is published on a random host port (e.g. Docker <c>64649:5432</c>), set
+/// <see cref="PostgresConnectionStringHelper.HostPortEnvironmentVariableName"/> to that host port to rewrite the port,
+/// or set <c>ConnectionStrings:Default</c> in <c>appsettings.Development.json</c> (see API project).
 /// </summary>
 public sealed class OrderForgeDbContextFactory : IDesignTimeDbContextFactory<OrderForgeDbContext>
 {
@@ -36,7 +35,7 @@ public sealed class OrderForgeDbContextFactory : IDesignTimeDbContextFactory<Ord
         var fromEnv = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
         if (!string.IsNullOrWhiteSpace(fromEnv))
         {
-            return ApplyHostPortOverride(fromEnv.Trim());
+            return PostgresConnectionStringHelper.ApplyHostPortEnvironmentOverride(fromEnv.Trim());
         }
 
         var apiDir = LocateOrderForgeApiDirectory();
@@ -46,43 +45,18 @@ public sealed class OrderForgeDbContextFactory : IDesignTimeDbContextFactory<Ord
             var fromDev = ReadConnectionStringDefault(devPath);
             if (!string.IsNullOrWhiteSpace(fromDev))
             {
-                return ApplyHostPortOverride(fromDev.Trim());
+                return PostgresConnectionStringHelper.ApplyHostPortEnvironmentOverride(fromDev.Trim());
             }
 
             var basePath = Path.Combine(apiDir, "appsettings.json");
             var fromBase = ReadConnectionStringDefault(basePath);
             if (!string.IsNullOrWhiteSpace(fromBase))
             {
-                return ApplyHostPortOverride(fromBase.Trim());
+                return PostgresConnectionStringHelper.ApplyHostPortEnvironmentOverride(fromBase.Trim());
             }
         }
 
-        return ApplyHostPortOverride(DefaultConnectionString);
-    }
-
-    /// <summary>
-    /// When Docker maps a host port (for example 59212) to container port 5432, host tools must use the host port.
-    /// Set <c>ORDERFORGE_POSTGRES_HOST_PORT=59212</c> (or edit API appsettings) before <c>dotnet ef database update</c>.
-    /// </summary>
-    private static string ApplyHostPortOverride(string connectionString)
-    {
-        var portEnv = Environment.GetEnvironmentVariable("ORDERFORGE_POSTGRES_HOST_PORT");
-        if (string.IsNullOrWhiteSpace(portEnv)
-            || !int.TryParse(portEnv, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var port)
-            || port <= 0)
-        {
-            return connectionString;
-        }
-
-        try
-        {
-            var builder = new NpgsqlConnectionStringBuilder(connectionString) { Port = port };
-            return builder.ConnectionString;
-        }
-        catch (ArgumentException)
-        {
-            return connectionString;
-        }
+        return PostgresConnectionStringHelper.ApplyHostPortEnvironmentOverride(DefaultConnectionString);
     }
 
     private static string? ReadConnectionStringDefault(string jsonFilePath)

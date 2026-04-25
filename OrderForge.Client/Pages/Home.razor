@@ -1,7 +1,10 @@
 @page "/"
 @page "/dashboard"
 @using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
 @attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITradeOrdersApiClient TradeOrdersApi
 
 <PageTitle>Account</PageTitle>
 
@@ -34,27 +37,56 @@
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-lg font-semibold text-slate-900">Recent orders</h2>
-        <div class="mt-4 overflow-x-auto">
-            <table class="w-full border-collapse text-sm [&_td]:border-t [&_td]:border-slate-100 [&_td]:py-2 [&_td]:pe-3 [&_th]:pb-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500">
-                <thead>
-                    <tr>
-                        <th>Order</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var r in recentOrders)
-                    {
+        @if (!canViewTradeOrders)
+        {
+            <p class="mt-4 text-sm text-slate-600">
+                Recent orders appear here when you sign in with a trade account linked to your company.
+            </p>
+        }
+        else if (tradeOrdersLoading)
+        {
+            <p class="mt-4 text-sm text-slate-500">Loading recent orders…</p>
+        }
+        else if (tradeOrdersError)
+        {
+            <p class="mt-4 text-sm text-rose-700" role="alert">We could not load your orders. Please try again later.</p>
+        }
+        else if (tradeOrders.Count == 0)
+        {
+            <p class="mt-4 text-sm text-slate-600">No orders yet. When you place an order, it will show up here.</p>
+        }
+        else
+        {
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full border-collapse text-sm [&_td]:border-t [&_td]:border-slate-100 [&_td]:py-2 [&_td]:pe-3 [&_th]:pb-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500">
+                    <thead>
                         <tr>
-                            <td class="font-medium text-slate-900">#@r.OrderNumber</td>
-                            <td class="text-slate-600">@r.PlacedAt.ToString("d")</td>
-                            <td><OrderStatusBadge Status="@r.Status" /></td>
+                            <th>Order</th>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th><span class="sr-only">Details</span></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var o in tradeOrders)
+                        {
+                            <tr>
+                                <td class="font-medium text-slate-900">@o.OrderNumber</td>
+                                <td class="text-slate-600">@o.PlacedAt.ToLocalTime().ToString("d")</td>
+                                <td class="text-slate-600">@o.ItemCount</td>
+                                <td class="font-medium text-slate-900">@o.Total.ToString("C")</td>
+                                <td><OrderStatusBadge Status="@o.Status" /></td>
+                                <td class="whitespace-nowrap">
+                                    <a class="text-link text-sm font-medium hover:text-primary" href="@Routes.Store.OrderDetail(o.Id)">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
         <a class="mt-4 inline-block text-sm font-medium text-link hover:text-primary" href="@Routes.Store.Orders">View all orders</a>
     </div>
 </div>
@@ -66,11 +98,47 @@
 
     private readonly decimal creditAvailable = 25000m;
 
-    private readonly List<RecentOrderVm> recentOrders =
-    [
-        new(10492, new DateTime(2026, 4, 1), "Shipped"),
-        new(10471, new DateTime(2026, 3, 28), "Processing"),
-    ];
+    private bool canViewTradeOrders;
 
-    private sealed record RecentOrderVm(int OrderNumber, DateTime PlacedAt, string Status);
+    private bool tradeOrdersLoading;
+
+    private bool tradeOrdersError;
+
+    private IReadOnlyList<TradeOrderSummaryModel> tradeOrders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        canViewTradeOrders = CanViewTradeOrders(user);
+
+        if (!canViewTradeOrders)
+        {
+            return;
+        }
+
+        tradeOrdersLoading = true;
+        try
+        {
+            tradeOrders = await TradeOrdersApi.GetRecentAsync(8);
+        }
+        catch
+        {
+            tradeOrdersError = true;
+        }
+        finally
+        {
+            tradeOrdersLoading = false;
+        }
+    }
+
+    private static bool CanViewTradeOrders(ClaimsPrincipal user)
+    {
+        if (user.IsInRole("SupplierAdmin") || user.IsInRole("SupplierViewer"))
+        {
+            return false;
+        }
+
+        return user.IsInRole("Customer") || user.IsInRole("CompanyAdmin");
+    }
 }

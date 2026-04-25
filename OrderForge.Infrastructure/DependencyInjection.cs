@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OrderForge.Application.Common;
 using OrderForge.Application.Common.Services;
+using OrderForge.Application.Orders;
 using OrderForge.Application.Organisations;
 using OrderForge.Application.Products;
 using OrderForge.Domain.Organisations;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("Default")
             ?? configuration.GetConnectionString("orderforge");
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        connectionString = PostgresConnectionStringHelper.ApplyHostPortEnvironmentOverride(connectionString);
 
         services.AddDbContext<OrderForgeDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -34,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IRepository<Product>>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<IOrganisationStatusLookup, OrganisationStatusLookup>();
+        services.AddScoped<ITradeOrderRepository, TradeOrderRepository>();
 
         services.Configure<KeycloakAdminOptions>(configuration.GetSection(KeycloakAdminOptions.SectionName));
         services.AddMemoryCache();

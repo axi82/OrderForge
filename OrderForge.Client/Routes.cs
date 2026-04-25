@@ -26,6 +26,8 @@ public static class Routes
         public const string Catalog = "catalog";
         public const string Cart = "cart";
         public const string Orders = "orders";
+
+        public static string OrderDetail(int orderId) => $"{Orders}/{orderId}";
     }
 
     public static class Admin

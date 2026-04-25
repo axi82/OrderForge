@@ -21,6 +21,9 @@ public static class ApiHttpClientExtensions
         services.AddHttpClient<IAdminApiClient, AdminApiClient>(client => client.BaseAddress = apiBaseUri)
             .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
 
+        services.AddHttpClient<ITradeOrdersApiClient, TradeOrdersApiClient>(client => client.BaseAddress = apiBaseUri)
+            .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
+
         return services;
     }
 }

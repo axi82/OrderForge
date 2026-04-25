@@ -11,6 +11,7 @@ using OrderForge.Api.Logging;
 using OrderForge.Api.Security;
 using OrderForge.Api;
 using OrderForge.Application;
+using OrderForge.Application.Admin;
 using OrderForge.Application.Common;
 using OrderForge.Infrastructure;
 using OrderForge.ServiceDefaults;
@@ -98,6 +99,9 @@ try
         options.AddPolicy(
             AuthorizationPolicies.InviteUsers,
             p => p.RequireRole("SupplierAdmin", "CompanyAdmin"));
+        options.AddPolicy(
+            AuthorizationPolicies.TradeAccount,
+            p => p.RequireRole(KnownRealmRoles.Customer, KnownRealmRoles.CompanyAdmin));
     });
     builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationFailureLoggingMiddlewareResultHandler>();
 

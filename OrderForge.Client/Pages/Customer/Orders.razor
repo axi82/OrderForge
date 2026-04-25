@@ -1,44 +1,79 @@
 @page "/orders"
-@attribute [Authorize]
+@attribute [Authorize(Policy = AuthorizationPolicies.TradeAccount)]
 
 <PageTitle>My orders</PageTitle>
 
 <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">My orders</h1>
 <p class="mt-2 text-slate-600">Recent orders and fulfilment status.</p>
 
-<div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-    <table class="w-full border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-slate-50/80 [&_td]:border-t [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-3 [&_th]:border-b [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-600">
-        <thead>
-            <tr>
-                <th>Order</th>
-                <th>Placed</th>
-                <th>Lines</th>
-                <th>Total</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var o in orders)
-            {
+@if (loading)
+{
+    <p class="mt-8 text-sm text-slate-500">Loading orders…</p>
+}
+else if (error)
+{
+    <p class="mt-8 text-sm text-rose-700" role="alert">We could not load your orders. Please try again later.</p>
+}
+else if (orders.Count == 0)
+{
+    <p class="mt-8 text-sm text-slate-600">You have no orders yet.</p>
+}
+else
+{
+    <div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <table class="w-full border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-slate-50/80 [&_td]:border-t [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-3 [&_th]:border-b [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-600">
+            <thead>
                 <tr>
-                    <td class="font-medium text-slate-900">#@o.OrderNumber</td>
-                    <td class="text-slate-600">@o.PlacedAt.ToString("d")</td>
-                    <td class="text-slate-600">@o.LineCount</td>
-                    <td class="font-medium text-slate-900">@o.Total.ToString("C")</td>
-                    <td><OrderStatusBadge Status="@o.Status" /></td>
+                    <th>Order</th>
+                    <th>Placed</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th><span class="sr-only">Details</span></th>
                 </tr>
-            }
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+                @foreach (var o in orders)
+                {
+                    <tr>
+                        <td class="font-medium text-slate-900">@o.OrderNumber</td>
+                        <td class="text-slate-600">@o.PlacedAt.ToLocalTime().ToString("d")</td>
+                        <td class="text-slate-600">@o.ItemCount</td>
+                        <td class="font-medium text-slate-900">@o.Total.ToString("C")</td>
+                        <td><OrderStatusBadge Status="@o.Status" /></td>
+                        <td class="whitespace-nowrap">
+                            <a class="text-link font-medium hover:text-primary" href="@Routes.Store.OrderDetail(o.Id)">View details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
 
 @code {
-    private readonly List<OrderRowVm> orders =
-    [
-        new(10492, new DateTime(2026, 4, 1), 6, 1280.40m, "Shipped"),
-        new(10471, new DateTime(2026, 3, 28), 3, 412.00m, "Processing"),
-        new(10450, new DateTime(2026, 3, 22), 12, 3555.18m, "Delivered"),
-    ];
+    [Inject]
+    private ITradeOrdersApiClient TradeOrdersApi { get; set; } = default!;
 
-    private sealed record OrderRowVm(int OrderNumber, DateTime PlacedAt, int LineCount, decimal Total, string Status);
+    private bool loading = true;
+
+    private bool error;
+
+    private IReadOnlyList<TradeOrderSummaryModel> orders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            orders = await TradeOrdersApi.GetRecentAsync(100);
+        }
+        catch
+        {
+            error = true;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
 }

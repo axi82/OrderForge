@@ -13,6 +13,8 @@ public interface ICurrentUser
 
     bool IsCompanyAdmin { get; }
 
+    bool IsCustomer { get; }
+
     /// <summary>Keycloak organization id from the access token (customer users).</summary>
     string? KeycloakOrganizationId { get; }
 }

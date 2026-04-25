@@ -1,0 +1,93 @@
+@page "/orders/{OrderId:int}"
+@attribute [Authorize(Policy = AuthorizationPolicies.TradeAccount)]
+
+<PageTitle>@(detail is null ? "Order details" : $"Order {detail.OrderNumber}")</PageTitle>
+
+<p class="mb-4">
+    <a class="text-sm font-medium text-link hover:text-primary" href="@Routes.Store.Orders">← Back to my orders</a>
+</p>
+
+@if (loading)
+{
+    <p class="text-sm text-slate-500">Loading order…</p>
+}
+else if (notFound || detail is null)
+{
+    <h1 class="text-2xl font-semibold text-slate-900">Order not found</h1>
+    <p class="mt-2 text-slate-600">This order does not exist or is not available for your account.</p>
+}
+else
+{
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Order @detail.OrderNumber</h1>
+    <div class="mt-4 flex flex-wrap gap-6 text-sm text-slate-600">
+        <div>
+            <span class="font-medium text-slate-700">Placed</span>
+            <span class="ms-1">@detail.PlacedAt.ToLocalTime().ToString("g")</span>
+        </div>
+        <div>
+            <span class="font-medium text-slate-700">Items</span>
+            <span class="ms-1">@detail.ItemCount</span>
+        </div>
+        <div>
+            <span class="font-medium text-slate-700">Total</span>
+            <span class="ms-1 font-semibold text-slate-900">@detail.Total.ToString("C")</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="font-medium text-slate-700">Status</span>
+            <OrderStatusBadge Status="@detail.Status" />
+        </div>
+    </div>
+
+    <h2 class="mt-10 text-lg font-semibold text-slate-900">Line items</h2>
+    <div class="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <table class="w-full border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-slate-50/80 [&_td]:border-t [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-3 [&_th]:border-b [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-600">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Line total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in detail.Lines)
+                {
+                    <tr>
+                        <td class="text-slate-900">@line.Description</td>
+                        <td class="text-slate-600">@line.Quantity.ToString("N2")</td>
+                        <td class="font-medium text-slate-900">@line.LineTotal.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    [Inject]
+    private ITradeOrdersApiClient TradeOrdersApi { get; set; } = default!;
+
+    private bool loading = true;
+
+    private bool notFound;
+
+    private TradeOrderDetailModel? detail;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        notFound = false;
+        detail = null;
+        try
+        {
+            detail = await TradeOrdersApi.GetByIdAsync(OrderId);
+            notFound = detail is null;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
