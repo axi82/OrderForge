@@ -2,13 +2,14 @@
 
 <div class="flex min-h-screen flex-col bg-slate-50">
     <header class="sticky top-0 z-50 bg-primary shadow-md">
-        <div class="mx-auto flex max-w-screen-2xl items-center px-4 py-3 sm:px-6 lg:px-8">
+        <div class="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a
                 class="shrink-0 text-lg font-semibold tracking-tight text-white no-underline hover:text-white"
                 href="@Routes.App.Root"
             >
                 Order Forge
             </a>
+            <SignOutButton Variant="SignOutButtonVariant.PrimaryHeaderToolbar" />
         </div>
     </header>
 

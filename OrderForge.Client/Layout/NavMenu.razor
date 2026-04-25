@@ -1,6 +1,4 @@
 @using OrderForge.Client
-@inject AppNavigator Navigator
-
 <header class="sticky top-0 z-50 bg-primary shadow-md">
     <div class="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <a
@@ -46,13 +44,7 @@
                             <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-xs font-semibold text-white">@CartBadgeCount</span>
                         }
                     </NavLink>
-                    <button
-                        type="button"
-                        class="ms-1 rounded-lg px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
-                        @onclick="SignOut"
-                    >
-                        Sign out
-                    </button>
+                    <SignOutButton Variant="SignOutButtonVariant.PrimaryHeaderToolbarLeadingMargin" OnBeforeSignOut="BeforeSignOutAsync" />
                 </Authorized>
                 <NotAuthorized>
                     <NavLink class="@NavInactive" href="@Routes.Nav.SignIn" ActiveClass="@NavActive">Sign in</NavLink>
@@ -86,13 +78,7 @@
                                 <a class="block rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10" href="@Routes.Admin.UsersInvite" @onclick="CloseMobile">Invite user</a>
                             </Authorized>
                         </AuthorizeView>
-                        <button
-                            type="button"
-                            class="mt-2 w-full rounded-lg px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"
-                            @onclick="SignOut"
-                        >
-                            Sign out
-                        </button>
+                        <SignOutButton Variant="SignOutButtonVariant.PrimaryHeaderMobileFullWidth" OnBeforeSignOut="BeforeSignOutAsync" />
                     </div>
                 </Authorized>
                 <NotAuthorized>
@@ -120,9 +106,9 @@
 
     private void CloseMobile() => mobileOpen = false;
 
-    private void SignOut()
+    private Task BeforeSignOutAsync()
     {
         CloseMobile();
-        Navigator.SignOut();
+        return Task.CompletedTask;
     }
 }

@@ -1,0 +1,39 @@
+@inject AppNavigator Navigator
+
+<button
+    type="button"
+    class="@ButtonClass"
+    @onclick="HandleClickAsync"
+>
+    Sign out
+</button>
+
+@code {
+    /// <summary>Visual preset for primary (green) header vs. neutral surfaces.</summary>
+    [Parameter]
+    public SignOutButtonVariant Variant { get; set; } = SignOutButtonVariant.PrimaryHeaderToolbar;
+
+    /// <summary>Optional hook (e.g. close mobile menu) before navigating to OIDC logout.</summary>
+    [Parameter]
+    public EventCallback OnBeforeSignOut { get; set; }
+
+    private string ButtonClass => Variant switch
+    {
+        SignOutButtonVariant.PrimaryHeaderToolbar =>
+            "rounded-lg px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30",
+        SignOutButtonVariant.PrimaryHeaderToolbarLeadingMargin =>
+            "ms-1 rounded-lg px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30",
+        SignOutButtonVariant.PrimaryHeaderMobileFullWidth =>
+            "mt-2 w-full rounded-lg px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30",
+        SignOutButtonVariant.NeutralToolbar =>
+            "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/30",
+        _ =>
+            "rounded-lg px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30",
+    };
+
+    private async Task HandleClickAsync()
+    {
+        await OnBeforeSignOut.InvokeAsync();
+        Navigator.SignOut();
+    }
+}
