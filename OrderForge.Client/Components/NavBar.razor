@@ -1,0 +1,291 @@
+@using OrderForge.Client
+
+<header class="sticky top-0 z-50 border-b border-slate-800/80 bg-[#0f172a] shadow-lg">
+    <div class="mx-auto flex max-w-screen-2xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:gap-4 lg:px-8">
+        <div class="flex items-center justify-between gap-3 lg:contents">
+            <a
+                class="flex shrink-0 items-center gap-3 rounded-md text-white no-underline outline-none ring-emerald-500/50 focus-visible:ring-2"
+                href="@Routes.App.Root"
+                @onclick="CloseMobile"
+            >
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 shadow-sm ring-1 ring-emerald-400/30" aria-hidden="true">
+                    <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-2.25-1.313M21 7.5v2.25m0-2.25-9-5.25m9 5.25-9 5.25M3 7.5l9-5.25m0 0-9 5.25m9-5.25v2.25m0-2.25 9 5.25m-9-5.25 9 5.25m0-2.25V7.5m0 0v2.25" />
+                    </svg>
+                </span>
+                <span class="text-lg font-bold tracking-tight text-white">Order Forge</span>
+            </a>
+
+            <div class="flex items-center gap-2 lg:hidden">
+                <a
+                    class="relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-200 outline-none ring-emerald-500/50 hover:bg-slate-800/80 focus-visible:ring-2"
+                    href="@Routes.Store.Cart"
+                    aria-label="@CartAriaLabel"
+                    @onclick="CloseMobile"
+                >
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm12.75 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z" />
+                    </svg>
+                    @if (CartItemCount > 0)
+                    {
+                        <span class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#0f172a]" aria-hidden="true">@CartDisplayCount</span>
+                    }
+                </a>
+
+                <a
+                    class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white no-underline outline-none ring-emerald-500/50 ring-offset-2 ring-offset-[#0f172a] hover:bg-slate-600 focus-visible:ring-2"
+                    href="@Routes.Account.Profile"
+                    aria-label="Your profile"
+                    @onclick="CloseMobile"
+                >
+                    @if (!string.IsNullOrWhiteSpace(UserInitials))
+                    {
+                        <span aria-hidden="true">@DisplayInitials</span>
+                    }
+                    else
+                    {
+                        <svg class="h-5 w-5 text-slate-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    }
+                </a>
+
+                <button
+                    type="button"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-200 hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                    @onclick="ToggleMobile"
+                    aria-expanded="@mobileOpen"
+                    aria-controls="forge-portal-mobile-nav"
+                >
+                    <span class="sr-only">Toggle navigation menu</span>
+                    @if (mobileOpen)
+                    {
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    }
+                </button>
+            </div>
+        </div>
+
+        <nav class="hidden flex-1 justify-center lg:flex" aria-label="Primary">
+            <ul class="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+                <li>
+                    <a
+                        class="@NavLinkClass("Catalogue")"
+                        href="@Routes.Store.Catalog"
+                    >
+                        Catalogue
+                    </a>
+                </li>
+                <li>
+                    <a
+                        class="@NavLinkClass("Orders")"
+                        href="@Routes.Store.Orders"
+                    >
+                        Orders
+                    </a>
+                </li>
+                <li>
+                    <a
+                        class="@NavLinkClass("Account")"
+                        href="@Routes.App.Root"
+                    >
+                        Account
+                    </a>
+                </li>
+                @if (IsAdmin)
+                {
+                    <li>
+                        <a
+                            class="@($"{NavLinkClass("Admin")} inline-flex items-center gap-2")"
+                            href="@Routes.Admin.Companies"
+                        >
+                            <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            Admin
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <div class="hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex lg:flex-initial lg:gap-4">
+            <form
+                role="search"
+                class="min-w-0 flex-1 lg:max-w-md"
+                @onsubmit="SubmitSearchAsync"
+                @onsubmit:preventDefault="true"
+            >
+                <label for="@SearchInputId" class="sr-only">Search products</label>
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500" aria-hidden="true">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                    </span>
+                    <input
+                        id="@SearchInputId"
+                        type="search"
+                        name="q"
+                        autocomplete="off"
+                        placeholder="Search products..."
+                        class="w-full rounded-lg border-0 bg-slate-900/90 py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner ring-1 ring-inset ring-slate-700/80 transition focus:outline-none focus:ring-2 focus:ring-emerald-500/80"
+                        @bind="_searchQuery"
+                        @bind:event="oninput"
+                    />
+                </div>
+            </form>
+
+            <a
+                class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-200 outline-none ring-emerald-500/50 hover:bg-slate-800/80 focus-visible:ring-2"
+                href="@Routes.Store.Cart"
+                aria-label="@CartAriaLabel"
+            >
+                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm12.75 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z" />
+                </svg>
+                @if (CartItemCount > 0)
+                {
+                    <span class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#0f172a]" aria-hidden="true">@CartDisplayCount</span>
+                }
+            </a>
+
+            <a
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white no-underline outline-none ring-emerald-500/50 ring-offset-2 ring-offset-[#0f172a] hover:bg-slate-600 focus-visible:ring-2"
+                href="@Routes.Account.Profile"
+                aria-label="Your profile"
+            >
+                @if (!string.IsNullOrWhiteSpace(UserInitials))
+                {
+                    <span aria-hidden="true">@DisplayInitials</span>
+                }
+                else
+                {
+                    <svg class="h-5 w-5 text-slate-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                }
+            </a>
+
+            <SignOutButton Variant="SignOutButtonVariant.PrimaryHeaderToolbarLeadingMargin" OnBeforeSignOut="BeforeSignOutAsync" />
+        </div>
+
+        <form
+            role="search"
+            class="lg:hidden"
+            @onsubmit="SubmitSearchAsync"
+            @onsubmit:preventDefault="true"
+        >
+            <label for="@($"{SearchInputId}-mobile")" class="sr-only">Search products</label>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500" aria-hidden="true">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                </span>
+                <input
+                    id="@($"{SearchInputId}-mobile")"
+                    type="search"
+                    name="q"
+                    autocomplete="off"
+                    placeholder="Search products..."
+                    class="w-full rounded-lg border-0 bg-slate-900/90 py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner ring-1 ring-inset ring-slate-700/80 transition focus:outline-none focus:ring-2 focus:ring-emerald-500/80"
+                    @bind="_searchQuery"
+                        @bind:event="oninput"
+                />
+            </div>
+        </form>
+    </div>
+
+    <div
+        id="forge-portal-mobile-nav"
+        class="@(mobileOpen ? "block border-t border-slate-800/80" : "hidden") lg:hidden"
+    >
+        <nav class="flex flex-col gap-1 px-4 py-3 sm:px-6" aria-label="Mobile primary">
+            <a class="@MobileNavClass("Catalogue")" href="@Routes.Store.Catalog" @onclick="CloseMobile">Catalogue</a>
+            <a class="@MobileNavClass("Orders")" href="@Routes.Store.Orders" @onclick="CloseMobile">Orders</a>
+            <a class="@MobileNavClass("Account")" href="@Routes.App.Root" @onclick="CloseMobile">Account</a>
+            @if (IsAdmin)
+            {
+                <a class="@($"{MobileNavClass("Admin")} inline-flex items-center gap-2")" href="@Routes.Admin.Companies" @onclick="CloseMobile">
+                    <svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    Admin
+                </a>
+            }
+            <div class="mt-2 border-t border-slate-800/80 pt-2">
+                <SignOutButton Variant="SignOutButtonVariant.PrimaryHeaderMobileFullWidth" OnBeforeSignOut="BeforeSignOutAsync" />
+            </div>
+        </nav>
+    </div>
+</header>
+
+@code {
+    private const string SearchInputId = "forge-navbar-product-search";
+
+    private string _searchQuery = "";
+
+    private bool mobileOpen;
+
+    /// <summary>Highlight key: Catalogue, Orders, Account, or Admin.</summary>
+    [Parameter]
+    public string CurrentPage { get; set; } = "Orders";
+
+    [Parameter]
+    public int CartItemCount { get; set; }
+
+    [Parameter]
+    public bool IsAdmin { get; set; }
+
+    [Parameter]
+    public string? UserInitials { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSearchSubmitted { get; set; }
+
+    private string DisplayInitials =>
+        UserInitials!.Trim().Length > 2
+            ? UserInitials.Trim()[..2].ToUpperInvariant()
+            : UserInitials!.Trim().ToUpperInvariant();
+
+    private string CartAriaLabel =>
+        CartItemCount == 0
+            ? "Shopping cart, no items"
+            : $"Shopping cart, {CartItemCount} item{(CartItemCount == 1 ? "" : "s")}";
+
+    private string CartDisplayCount => CartItemCount > 99 ? "99+" : CartItemCount.ToString();
+
+    private string NavLinkClass(string page) =>
+        string.Equals(CurrentPage, page, StringComparison.OrdinalIgnoreCase)
+            ? "rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 no-underline outline-none ring-emerald-500/40 transition hover:bg-white focus-visible:ring-2"
+            : "rounded-full px-4 py-2 text-sm font-medium text-slate-300 no-underline outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-emerald-500/50";
+
+    private string MobileNavClass(string page) =>
+        string.Equals(CurrentPage, page, StringComparison.OrdinalIgnoreCase)
+            ? "rounded-lg bg-slate-100 px-3 py-3 text-sm font-semibold text-slate-900 no-underline"
+            : "rounded-lg px-3 py-3 text-sm font-medium text-slate-200 no-underline hover:bg-slate-800/80";
+
+    private void ToggleMobile() => mobileOpen = !mobileOpen;
+
+    private void CloseMobile() => mobileOpen = false;
+
+    private Task BeforeSignOutAsync()
+    {
+        CloseMobile();
+        return Task.CompletedTask;
+    }
+
+    private async Task SubmitSearchAsync() =>
+        await OnSearchSubmitted.InvokeAsync(_searchQuery.Trim());
+}

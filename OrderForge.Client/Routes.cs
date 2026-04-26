@@ -14,11 +14,18 @@ public static class Routes
         public const string OidcLogout = "authentication/logout";
         public const string LoginFailed = "auth/login-failed";
 
+        public const string PostLogin = "auth/post-login";
+
         public static string SignInWithReturnUrl(string returnUrl) =>
             $"{SignIn}?returnUrl={Uri.EscapeDataString(returnUrl)}";
 
         public static string OidcLoginWithReturnUrl(string returnUrl) =>
             $"{OidcLogin}?returnUrl={Uri.EscapeDataString(returnUrl)}";
+    }
+
+    public static class Account
+    {
+        public const string Profile = "profile";
     }
 
     public static class Store

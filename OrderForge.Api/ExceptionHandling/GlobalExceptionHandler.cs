@@ -1,11 +1,12 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using OrderForge.Api.Logging;
 using OrderForge.Application.Common;
 
 namespace OrderForge.Api.ExceptionHandling;
 
-internal sealed class GlobalExceptionHandler : IExceptionHandler
+internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -42,6 +43,11 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
                 return true;
 
             case UnauthorizedAccessException uax:
+                logger.LogWarning(
+                    "Forbidden: UnauthorizedAccessException — UserEmail: {UserEmail} — UserId: {UserId} — Detail: {Message}",
+                    ClaimsPrincipalLogHelper.GetUserEmail(httpContext.User) ?? "(unknown)",
+                    ClaimsPrincipalLogHelper.GetUserId(httpContext.User) ?? "(anonymous)",
+                    uax.Message);
                 httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await httpContext.Response.WriteAsJsonAsync(
                     new ProblemDetails

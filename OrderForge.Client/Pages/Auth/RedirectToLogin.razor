@@ -7,7 +7,7 @@
         var relative = Navigation.ToBaseRelativePath(Navigation.Uri).TrimStart('/');
         if (string.IsNullOrEmpty(relative))
         {
-            relative = "dashboard";
+            relative = Routes.Auth.PostLogin;
         }
 
         Navigator.GoToSignInPage(relative);

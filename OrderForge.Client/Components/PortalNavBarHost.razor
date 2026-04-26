@@ -1,0 +1,123 @@
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
+
+<NavBar
+    CartItemCount="@_cartItemCount"
+    CurrentPage="@_navCurrentPage"
+    IsAdmin="@_isAdmin"
+    OnSearchSubmitted="OnSearchSubmittedAsync"
+    UserInitials="@_userInitials"
+/>
+
+@code {
+    private string _navCurrentPage = "Orders";
+    private int _cartItemCount;
+    private bool _isAdmin;
+    private string? _userInitials;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await RefreshNavContextAsync();
+    }
+
+    public void Dispose() =>
+        NavigationManager.LocationChanged -= OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshNavContextAsync();
+            StateHasChanged();
+        });
+
+    private async Task RefreshNavContextAsync()
+    {
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        _isAdmin = user.IsInRole("Admin") || user.IsInRole(AuthorizationPolicies.SupplierAdmin);
+        _userInitials = GetInitials(user);
+        _navCurrentPage = ResolveCurrentNavPage();
+        _cartItemCount = 0; // Replace with cart state when available.
+    }
+
+    private string ResolveCurrentNavPage()
+    {
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var q = path.IndexOf('?', StringComparison.Ordinal);
+        if (q >= 0)
+        {
+            path = path[..q];
+        }
+
+        path = path.Trim('/').ToLowerInvariant();
+        if (string.IsNullOrEmpty(path))
+        {
+            return "Account";
+        }
+
+        if (path.StartsWith(Routes.Store.Catalog, StringComparison.OrdinalIgnoreCase))
+        {
+            return "Catalogue";
+        }
+
+        if (path.StartsWith(Routes.Store.Orders, StringComparison.OrdinalIgnoreCase))
+        {
+            return "Orders";
+        }
+
+        if (path.StartsWith("admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Admin";
+        }
+
+        if (path.StartsWith(Routes.Account.Profile, StringComparison.OrdinalIgnoreCase))
+        {
+            return "Account";
+        }
+
+        return "Account";
+    }
+
+    private static string? GetInitials(ClaimsPrincipal user)
+    {
+        var given = user.FindFirst("given_name")?.Value;
+        var family = user.FindFirst("family_name")?.Value;
+        if (!string.IsNullOrEmpty(given) && !string.IsNullOrEmpty(family))
+        {
+            return $"{char.ToUpperInvariant(given[0])}{char.ToUpperInvariant(family[0])}";
+        }
+
+        var name = user.FindFirst("name")?.Value;
+        if (!string.IsNullOrEmpty(name))
+        {
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+            {
+                return $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[^1][0])}";
+            }
+
+            if (parts.Length == 1)
+            {
+                var p = parts[0];
+                return p.Length >= 2 ? p[..2].ToUpperInvariant() : p.ToUpperInvariant();
+            }
+        }
+
+        var preferred = user.FindFirst("preferred_username")?.Value;
+        if (!string.IsNullOrEmpty(preferred))
+        {
+            return preferred.Length >= 2 ? preferred[..2].ToUpperInvariant() : preferred.ToUpperInvariant();
+        }
+
+        return null;
+    }
+
+    private Task OnSearchSubmittedAsync(string query)
+    {
+        _ = query;
+        return Task.CompletedTask;
+    }
+}

@@ -17,7 +17,7 @@ public sealed class AuthorizationFailureLoggingMiddlewareResultHandler(ILogger<A
     public async Task HandleAsync(
         RequestDelegate next,
         HttpContext context,
-        AuthorizationPolicy policy,
+        AuthorizationPolicy? policy,
         PolicyAuthorizationResult authorizeResult)
     {
         if (!authorizeResult.Succeeded)
@@ -40,19 +40,23 @@ public sealed class AuthorizationFailureLoggingMiddlewareResultHandler(ILogger<A
                 outcome = "Not authorized";
             }
 
-            var policySummary = SummarizePolicy(policy);
+            var policySummary = policy is null ? "(no policy object)" : SummarizePolicy(policy);
             var failureDetail = FormatFailure(authorizeResult.AuthorizationFailure);
+            var userEmail = ClaimsPrincipalLogHelper.GetUserEmail(context.User) ?? "(unknown)";
+            var userId = ClaimsPrincipalLogHelper.GetUserId(context.User) ?? "(anonymous)";
 
             logger.LogWarning(
-                "Authorization failed — {Outcome} — {Method} {Resource} — Policy requirements: {PolicySummary} — {FailureDetail}",
+                "API authorization denied — Outcome: {AuthorizationOutcome} — UserEmail: {UserEmail} — UserId: {UserId} — HTTP {HttpMethod} {Resource} — Policy requirements: {PolicySummary} — Reason: {FailureReason}",
                 outcome,
+                userEmail,
+                userId,
                 context.Request.Method,
                 resource,
                 policySummary,
                 failureDetail);
         }
 
-        await _defaultHandler.HandleAsync(next, context, policy, authorizeResult).ConfigureAwait(false);
+        await _defaultHandler.HandleAsync(next, context, policy!, authorizeResult).ConfigureAwait(false);
     }
 
     private static string SummarizePolicy(AuthorizationPolicy policy)

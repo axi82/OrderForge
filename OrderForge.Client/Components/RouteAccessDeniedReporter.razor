@@ -1,0 +1,39 @@
+@using Microsoft.AspNetCore.Components.Routing
+@inject IRouteAuthorizationAuditApi AuditApi
+@inject NavigationManager Navigation
+
+@code {
+    [Parameter, EditorRequired]
+    public RouteData RouteData { get; set; } = default!;
+
+    private bool _sent;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _sent)
+        {
+            return;
+        }
+
+        _sent = true;
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri).TrimStart('/');
+        var pageType = RouteData.PageType;
+        var summary = RouteAuthorizationFormatter.Describe(pageType);
+
+        try
+        {
+            await AuditApi.ReportClientRouteDenialAsync(
+                    new ClientRouteDenialReport
+                    {
+                        RelativePath = string.IsNullOrEmpty(relative) ? "(root)" : relative,
+                        PageTypeFullName = pageType?.FullName,
+                        RouteAuthorizationSummary = summary,
+                    })
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            // Audit must not affect the error UI
+        }
+    }
+}

@@ -11,9 +11,8 @@
                     }
                     else
                     {
-                        <LayoutView Layout="@typeof(MainLayout)">
-                            <p class="p-3 text-red-600" role="alert">You are not allowed to view this page.</p>
-                        </LayoutView>
+                        <RouteAccessDeniedReporter RouteData="@routeData" />
+                        <p class="p-3 text-red-600" role="alert">You are not allowed to view this page.</p>
                     }
                 </NotAuthorized>
         

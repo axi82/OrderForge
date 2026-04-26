@@ -22,7 +22,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var returnUrl = TryGetQueryValue(Navigation.ToAbsoluteUri(Navigation.Uri), "returnUrl") ?? "dashboard";
+        var returnUrl = TryGetQueryValue(Navigation.ToAbsoluteUri(Navigation.Uri), "returnUrl") ?? Routes.Auth.PostLogin;
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);
         if (authState.User.Identity?.IsAuthenticated == true)
         {

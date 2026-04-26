@@ -1,0 +1,39 @@
+@page "/auth/post-login"
+@layout EmptyLayout
+@attribute [Authorize]
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
+
+<PageTitle>Redirecting</PageTitle>
+
+<div class="flex min-h-screen flex-col bg-slate-50">
+    <header class="border-b border-slate-200 bg-white">
+        <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <a class="text-lg font-semibold tracking-tight text-primary no-underline hover:text-primary-dark" href="@Routes.App.Root">Order Forge</a>
+        </div>
+    </header>
+    <main class="flex flex-1 items-center justify-center px-4 py-16">
+        <p class="text-sm text-slate-600" role="status">@statusMessage</p>
+    </main>
+</div>
+
+@code {
+    private string statusMessage = "Redirecting…";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);
+        var user = authState.User;
+
+        var trade = await AuthorizationService.AuthorizeAsync(user, AuthorizationPolicies.TradeAccount).ConfigureAwait(false);
+        if (trade.Succeeded)
+        {
+            Navigation.NavigateTo(Routes.Store.Orders, replace: true);
+        }
+        else
+        {
+            Navigation.NavigateTo("dashboard", replace: true);
+        }
+    }
+}
