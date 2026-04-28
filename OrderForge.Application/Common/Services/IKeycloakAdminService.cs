@@ -25,6 +25,20 @@ public interface IKeycloakAdminService
 
     Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
 
+    /// <summary>Updates Keycloak user first and last name via Admin API (GET + PUT user).</summary>
+    Task UpdateRealmUserNamesAsync(
+        string userId,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Sets the user's password via Admin API <c>PUT .../reset-password</c>.</summary>
+    Task SetRealmUserPasswordAsync(
+        string userId,
+        string newPassword,
+        bool temporary,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Lists realm users (brief). Maps to Keycloak <c>GET .../users</c>.</summary>
     Task<IReadOnlyList<KeycloakRealmUserBrief>> SearchRealmUsersAsync(
         int first,

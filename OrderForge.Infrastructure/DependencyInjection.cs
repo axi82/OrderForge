@@ -39,6 +39,8 @@ public static class DependencyInjection
         services.AddScoped<ITradeOrderRepository, TradeOrderRepository>();
 
         services.Configure<KeycloakAdminOptions>(configuration.GetSection(KeycloakAdminOptions.SectionName));
+        services.Configure<KeycloakPasswordGrantOptions>(
+            configuration.GetSection(KeycloakPasswordGrantOptions.SectionName));
         services.AddMemoryCache();
         services.AddHttpClient(
             "KeycloakAdmin",
@@ -51,6 +53,7 @@ public static class DependencyInjection
                 }
             });
         services.AddScoped<IKeycloakAdminService, KeycloakAdminService>();
+        services.AddScoped<IKeycloakUserPasswordValidator, KeycloakUserPasswordValidator>();
 
         return services;
     }

@@ -14,6 +14,11 @@ public sealed class HttpContextCurrentUser(IHttpContextAccessor httpContextAcces
         User?.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
+    public string? PreferredUsername =>
+        User?.FindFirstValue("preferred_username")
+        ?? User?.FindFirstValue(JwtRegisteredClaimNames.Email)
+        ?? User?.FindFirstValue(ClaimTypes.Email)
+        ?? User?.FindFirstValue("email");
 
     public bool IsSupplierAdmin => User?.IsInRole(KnownRealmRoles.SupplierAdmin) == true;
 

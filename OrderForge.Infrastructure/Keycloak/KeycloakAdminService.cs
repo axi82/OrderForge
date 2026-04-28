@@ -281,6 +281,67 @@ public sealed class KeycloakAdminService(
         }
     }
 
+    public async Task UpdateRealmUserNamesAsync(
+        string userId,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        var user = await GetRealmUserByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (user is null)
+        {
+            throw new KeycloakAdminException("User was not found in Keycloak.")
+            {
+                StatusCode = 404
+            };
+        }
+
+        user.FirstName = firstName;
+        user.LastName = lastName;
+
+        using var message = await CreateRequestAsync(
+            HttpMethod.Put,
+            $"admin/realms/{Uri.EscapeDataString(_options.Realm)}/users/{Uri.EscapeDataString(userId)}",
+            cancellationToken);
+        message.Content = JsonContent.Create(user, options: JsonCamel);
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "Update user failed.", cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task SetRealmUserPasswordAsync(
+        string userId,
+        string newPassword,
+        bool temporary,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateConfiguration();
+        using var message = await CreateRequestAsync(
+            HttpMethod.Put,
+            $"admin/realms/{Uri.EscapeDataString(_options.Realm)}/users/{Uri.EscapeDataString(userId)}/reset-password",
+            cancellationToken);
+        message.Content = JsonContent.Create(
+            new CredentialRepresentation
+            {
+                Type = "password",
+                Value = newPassword,
+                Temporary = temporary,
+            },
+            options: JsonCamel);
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "Reset password failed.", cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     public async Task<IReadOnlyList<KeycloakRealmUserBrief>> SearchRealmUsersAsync(
         int first,
         int max,
@@ -544,6 +605,30 @@ public sealed class KeycloakAdminService(
         }
 
         return await response.Content.ReadFromJsonAsync<RoleRepresentation>(JsonCamel, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<UserRepresentation?> GetRealmUserByIdAsync(string userId, CancellationToken cancellationToken)
+    {
+        ValidateConfiguration();
+        using var message = await CreateRequestAsync(
+            HttpMethod.Get,
+            $"admin/realms/{Uri.EscapeDataString(_options.Realm)}/users/{Uri.EscapeDataString(userId)}",
+            cancellationToken);
+
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await ThrowKeycloakErrorAsync(response, "Get user failed.", cancellationToken).ConfigureAwait(false);
+        }
+
+        return await response.Content.ReadFromJsonAsync<UserRepresentation>(JsonCamel, cancellationToken)
             .ConfigureAwait(false);
     }
 

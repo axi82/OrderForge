@@ -7,6 +7,9 @@ public interface ICurrentUser
 {
     string? UserId { get; }
 
+    /// <summary>Keycloak login identifier from the token (<c>preferred_username</c>, then email).</summary>
+    string? PreferredUsername { get; }
+
     bool IsSupplierAdmin { get; }
 
     bool IsSupplierViewer { get; }

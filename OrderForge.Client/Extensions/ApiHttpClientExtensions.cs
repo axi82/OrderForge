@@ -27,6 +27,9 @@ public static class ApiHttpClientExtensions
         services.AddHttpClient<IRouteAuthorizationAuditApi, RouteAuthorizationAuditApi>(client => client.BaseAddress = apiBaseUri)
             .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
 
+        services.AddHttpClient<IProfileApiClient, ProfileApiClient>(client => client.BaseAddress = apiBaseUri)
+            .AddHttpMessageHandler<OrderForgeApiAuthorizationMessageHandler>();
+
         return services;
     }
 }
