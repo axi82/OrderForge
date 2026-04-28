@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderForge.ServiceDefaults"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderForge.AppHost", "OrderForge.AppHost\OrderForge.AppHost.csproj", "{DE5A1F83-3797-43B0-B0E0-5955DF554BFB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderForge.Api.UnitTests", "tests\OrderForge.Api.UnitTests\OrderForge.Api.UnitTests.csproj", "{336E533F-9194-40E5-A37B-7A4ABA6E5928}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -148,6 +150,18 @@ Global
 		{DE5A1F83-3797-43B0-B0E0-5955DF554BFB}.Release|x64.Build.0 = Release|Any CPU
 		{DE5A1F83-3797-43B0-B0E0-5955DF554BFB}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE5A1F83-3797-43B0-B0E0-5955DF554BFB}.Release|x86.Build.0 = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|x64.Build.0 = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Debug|x86.Build.0 = Debug|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|x64.ActiveCfg = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|x64.Build.0 = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|x86.ActiveCfg = Release|Any CPU
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +169,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{382236B9-EAE7-43CA-A5A4-D6127E0C8AAF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{B3693487-BB27-4B4F-8880-2F805F31B6E5} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{336E533F-9194-40E5-A37B-7A4ABA6E5928} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B017AF84-F885-481F-8E01-D8849C59BD36}

@@ -1,10 +1,7 @@
 @page "/profile"
 @attribute [Authorize]
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IProfileApiClient ProfileApi
-@using System.Net.Http
 @using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Forms
 
 <PageTitle>Profile</PageTitle>
 
@@ -22,156 +19,20 @@ else if (_user?.Identity?.IsAuthenticated != true)
 else
 {
     <div class="mt-8 grid gap-8 lg:grid-cols-2">
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="profile-details-heading">
-            <h2 id="profile-details-heading" class="text-base font-semibold text-slate-900">Account details</h2>
-            <dl class="mt-4 space-y-4 text-sm">
-                <div>
-                    <dt class="font-medium text-slate-500">Email address</dt>
-                    <dd class="mt-1 text-slate-900">@FormatOptional(Email(_user))</dd>
-                </div>
-            </dl>
-            <p class="mt-4 text-xs text-slate-500">Email is managed in your organisation’s directory. Contact an administrator to change it.</p>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="update-name-heading">
-            <h2 id="update-name-heading" class="text-base font-semibold text-slate-900">Your name</h2>
-            <p class="mt-1 text-sm text-slate-600">Updates your first and last name in Keycloak. You may need to sign out and back in for the header to show the new name.</p>
-            <EditForm Model="_nameModel" OnValidSubmit="SaveNameAsync" class="mt-4 space-y-4">
-                <div>
-                    <label for="profile-first-name" class="block text-sm font-medium text-slate-700">First name</label>
-                    <InputText
-                        id="profile-first-name"
-                        @bind-Value="_nameModel.FirstName"
-                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        autocomplete="given-name"
-                    />
-                </div>
-                <div>
-                    <label for="profile-last-name" class="block text-sm font-medium text-slate-700">Last name</label>
-                    <InputText
-                        id="profile-last-name"
-                        @bind-Value="_nameModel.LastName"
-                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        autocomplete="family-name"
-                    />
-                </div>
-                @if (!string.IsNullOrEmpty(_nameError))
-                {
-                    <p class="text-sm text-rose-700" role="alert">@_nameError</p>
-                }
-                @if (!string.IsNullOrEmpty(_nameSuccess))
-                {
-                    <p class="text-sm text-emerald-800" role="status">@_nameSuccess</p>
-                }
-                <button
-                    type="submit"
-                    class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                    disabled="@_nameSaving"
-                >
-                    @(_nameSaving ? "Saving…" : "Save name")
-                </button>
-            </EditForm>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="password-heading">
-            <h2 id="password-heading" class="text-base font-semibold text-slate-900">Password</h2>
-            <p class="mt-1 text-sm text-slate-600">
-                Enter your current password, then choose a new one (minimum @MinPasswordLength characters). Your current password is checked with Keycloak before the change is applied.
-            </p>
-            <EditForm Model="_passwordModel" OnValidSubmit="SavePasswordAsync" class="mt-4 space-y-4">
-                <div>
-                    <label for="profile-current-password" class="block text-sm font-medium text-slate-700">Current password</label>
-                    <input
-                        id="profile-current-password"
-                        type="password"
-                        @bind="_passwordModel.CurrentPassword"
-                        @bind:event="oninput"
-                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        autocomplete="current-password"
-                    />
-                </div>
-                <div>
-                    <label for="profile-new-password" class="block text-sm font-medium text-slate-700">New password</label>
-                    <input
-                        id="profile-new-password"
-                        type="password"
-                        @bind="_passwordModel.NewPassword"
-                        @bind:event="oninput"
-                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        autocomplete="new-password"
-                    />
-                </div>
-                <div>
-                    <label for="profile-confirm-password" class="block text-sm font-medium text-slate-700">Confirm new password</label>
-                    <input
-                        id="profile-confirm-password"
-                        type="password"
-                        @bind="_passwordModel.ConfirmPassword"
-                        @bind:event="oninput"
-                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-                        autocomplete="new-password"
-                    />
-                </div>
-                @if (!string.IsNullOrEmpty(_passwordError))
-                {
-                    <p class="text-sm text-rose-700" role="alert">@_passwordError</p>
-                }
-                @if (!string.IsNullOrEmpty(_passwordSuccess))
-                {
-                    <p class="text-sm text-emerald-800" role="status">@_passwordSuccess</p>
-                }
-                <button
-                    type="submit"
-                    class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                    disabled="@_passwordSaving"
-                >
-                    @(_passwordSaving ? "Updating…" : "Change password")
-                </button>
-            </EditForm>
-        </section>
-
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2" aria-labelledby="claims-heading">
-            <h2 id="claims-heading" class="text-base font-semibold text-slate-900">All assigned claims</h2>
-            <p class="mt-1 text-sm text-slate-600">
-                Every claim present on your signed-in session (including realm roles and profile scope). Types are shown as issued by the identity provider.
-            </p>
-            <div class="mt-4 overflow-x-auto rounded-lg border border-slate-200">
-                <table class="w-full min-w-[32rem] border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-slate-50/80 [&_td]:border-t [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-2.5 [&_td]:align-top [&_td]:text-slate-800 [&_th]:border-b [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-600">
-                    <thead>
-                        <tr>
-                            <th scope="col">Claim type</th>
-                            <th scope="col">Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _claimRows)
-                        {
-                            <tr>
-                                <td class="max-w-[14rem] break-all font-mono text-xs text-slate-700 sm:max-w-none">@row.Type</td>
-                                <td class="break-all font-mono text-xs text-slate-900">@row.Value</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <ProfileUserDetails
+            Email="@Email(_user)"
+            InitialFirstName="@(FirstName(_user) ?? "")"
+            InitialLastName="@(LastName(_user) ?? "")"
+        />
+        <ProfileChangePassword />
+        <ProfileRealmClaims ClaimRows="@_claimRows" />
     </div>
 }
 
 @code {
-    private const int MinPasswordLength = 8;
-
     private bool _loading = true;
-    private bool _nameSaving;
-    private bool _passwordSaving;
     private ClaimsPrincipal? _user;
-    private IReadOnlyList<ClaimRow> _claimRows = [];
-    private NameEditModel _nameModel = new();
-    private PasswordEditModel _passwordModel = new();
-    private string? _nameError;
-    private string? _nameSuccess;
-    private string? _passwordError;
-    private string? _passwordSuccess;
+    private IReadOnlyList<ProfileClaimRow> _claimRows = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -179,10 +40,8 @@ else
         _user = auth.User;
         if (_user.Identity?.IsAuthenticated == true)
         {
-            _nameModel.FirstName = FirstName(_user) ?? "";
-            _nameModel.LastName = LastName(_user) ?? "";
             _claimRows = _user.Claims
-                .Select(c => new ClaimRow(ShortenClaimType(c.Type), c.Value))
+                .Select(c => new ProfileClaimRow(ShortenClaimType(c.Type), c.Value))
                 .OrderBy(r => r.Type, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(r => r.Value, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -190,103 +49,6 @@ else
 
         _loading = false;
     }
-
-    private async Task SaveNameAsync()
-    {
-        _nameError = null;
-        _nameSuccess = null;
-        _nameSaving = true;
-        try
-        {
-            await ProfileApi.UpdateProfileAsync(_nameModel.FirstName, _nameModel.LastName).ConfigureAwait(false);
-            _nameSuccess = "Name saved. Sign out and back in if it does not update in the app immediately.";
-        }
-        catch (HttpRequestException ex)
-        {
-            _nameError = ApiErrorMessage(ex);
-        }
-        finally
-        {
-            _nameSaving = false;
-        }
-    }
-
-    private async Task SavePasswordAsync()
-    {
-        _passwordError = null;
-        _passwordSuccess = null;
-        if (string.IsNullOrWhiteSpace(_passwordModel.CurrentPassword))
-        {
-            _passwordError = "Current password is required.";
-            return;
-        }
-
-        if (_passwordModel.NewPassword != _passwordModel.ConfirmPassword)
-        {
-            _passwordError = "New password and confirmation do not match.";
-            return;
-        }
-
-        if (_passwordModel.NewPassword.Length < MinPasswordLength)
-        {
-            _passwordError = $"Password must be at least {MinPasswordLength} characters.";
-            return;
-        }
-
-        if (string.Equals(_passwordModel.CurrentPassword, _passwordModel.NewPassword, StringComparison.Ordinal))
-        {
-            _passwordError = "New password must be different from your current password.";
-            return;
-        }
-
-        _passwordSaving = true;
-        try
-        {
-            await ProfileApi
-                .ChangePasswordAsync(
-                    _passwordModel.CurrentPassword,
-                    _passwordModel.NewPassword,
-                    _passwordModel.ConfirmPassword)
-                .ConfigureAwait(false);
-            _passwordModel = new PasswordEditModel();
-            _passwordSuccess = "Password updated. Use your new password the next time you sign in.";
-        }
-        catch (HttpRequestException ex)
-        {
-            _passwordError = ApiErrorMessage(ex);
-        }
-        finally
-        {
-            _passwordSaving = false;
-        }
-    }
-
-    private static string ApiErrorMessage(HttpRequestException ex)
-    {
-        var msg = ex.Message;
-        var idx = msg.IndexOf(": ", StringComparison.Ordinal);
-        if (idx > 0 && idx < msg.Length - 2)
-        {
-            return msg[(idx + 2)..];
-        }
-
-        return msg;
-    }
-
-    private sealed class NameEditModel
-    {
-        public string FirstName { get; set; } = "";
-        public string LastName { get; set; } = "";
-    }
-
-    private sealed class PasswordEditModel
-    {
-        public string CurrentPassword { get; set; } = "";
-        public string NewPassword { get; set; } = "";
-        public string ConfirmPassword { get; set; } = "";
-    }
-
-    private readonly record struct ClaimRow(string Type, string Value);
 
     private static string? FirstName(ClaimsPrincipal user) =>
         user.FindFirst(ClaimTypes.GivenName)?.Value
@@ -299,9 +61,6 @@ else
     private static string? Email(ClaimsPrincipal user) =>
         user.FindFirst(ClaimTypes.Email)?.Value
         ?? user.FindFirst("email")?.Value;
-
-    private static string FormatOptional(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? "—" : value;
 
     private static string ShortenClaimType(string type) => type switch
     {

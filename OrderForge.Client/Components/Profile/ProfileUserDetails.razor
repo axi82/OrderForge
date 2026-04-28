@@ -1,0 +1,111 @@
+@inject IProfileApiClient ProfileApi
+@using System.Net.Http
+@using Microsoft.AspNetCore.Components.Forms
+
+<section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="profile-details-heading">
+    <h2 id="profile-details-heading" class="text-base font-semibold text-slate-900">Account details</h2>
+    <dl class="mt-4 space-y-4 text-sm">
+        <div>
+            <dt class="font-medium text-slate-500">Email address</dt>
+            <dd class="mt-1 text-slate-900">@FormatOptional(Email)</dd>
+        </div>
+    </dl>
+    <p class="mt-4 text-xs text-slate-500">Email is managed in your organisation’s directory. Contact an administrator to change it.</p>
+</section>
+
+<section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="update-name-heading">
+    <h2 id="update-name-heading" class="text-base font-semibold text-slate-900">Your name</h2>
+    <p class="mt-1 text-sm text-slate-600">Updates your first and last name in Keycloak. You may need to sign out and back in for the header to show the new name.</p>
+    <EditForm Model="_nameModel" OnValidSubmit="SaveNameAsync" class="mt-4 space-y-4">
+        <div>
+            <label for="profile-first-name" class="block text-sm font-medium text-slate-700">First name</label>
+            <InputText
+                id="profile-first-name"
+                @bind-Value="_nameModel.FirstName"
+                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+                autocomplete="given-name"
+            />
+        </div>
+        <div>
+            <label for="profile-last-name" class="block text-sm font-medium text-slate-700">Last name</label>
+            <InputText
+                id="profile-last-name"
+                @bind-Value="_nameModel.LastName"
+                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+                autocomplete="family-name"
+            />
+        </div>
+        @if (!string.IsNullOrEmpty(_nameError))
+        {
+            <p class="text-sm text-rose-700" role="alert">@_nameError</p>
+        }
+        @if (!string.IsNullOrEmpty(_nameSuccess))
+        {
+            <p class="text-sm text-emerald-800" role="status">@_nameSuccess</p>
+        }
+        <button
+            type="submit"
+            class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+            disabled="@_nameSaving"
+        >
+            @(_nameSaving ? "Saving…" : "Save name")
+        </button>
+    </EditForm>
+</section>
+
+@code {
+    [Parameter]
+    public string? Email { get; set; }
+
+    [Parameter]
+    public string InitialFirstName { get; set; } = "";
+
+    [Parameter]
+    public string InitialLastName { get; set; } = "";
+
+    private readonly NameEditModel _nameModel = new();
+    private bool _nameSaving;
+    private string? _nameError;
+    private string? _nameSuccess;
+    private string? _syncedInitialsKey;
+
+    protected override void OnParametersSet()
+    {
+        var key = $"{InitialFirstName}\0{InitialLastName}";
+        if (!string.Equals(_syncedInitialsKey, key, StringComparison.Ordinal))
+        {
+            _syncedInitialsKey = key;
+            _nameModel.FirstName = InitialFirstName;
+            _nameModel.LastName = InitialLastName;
+        }
+    }
+
+    private async Task SaveNameAsync()
+    {
+        _nameError = null;
+        _nameSuccess = null;
+        _nameSaving = true;
+        try
+        {
+            await ProfileApi.UpdateProfileAsync(_nameModel.FirstName, _nameModel.LastName).ConfigureAwait(false);
+            _nameSuccess = "Name saved. Sign out and back in if it does not update in the app immediately.";
+        }
+        catch (HttpRequestException ex)
+        {
+            _nameError = ProfileApiErrors.FromHttpRequest(ex);
+        }
+        finally
+        {
+            _nameSaving = false;
+        }
+    }
+
+    private static string FormatOptional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+    private sealed class NameEditModel
+    {
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+    }
+}

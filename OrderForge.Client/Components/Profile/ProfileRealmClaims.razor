@@ -1,0 +1,30 @@
+<section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2" aria-labelledby="realm-claims-heading">
+    <h2 id="realm-claims-heading" class="text-base font-semibold text-slate-900">Realm roles and claims</h2>
+    <p class="mt-1 text-sm text-slate-600">
+        Realm roles, organisation data, and other claims on your current session. Types are shown as issued by the identity provider (Keycloak).
+    </p>
+    <div class="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+        <table class="w-full min-w-[32rem] border-collapse text-sm [&_tbody_tr:nth-child(odd)]:bg-slate-50/80 [&_td]:border-t [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-2.5 [&_td]:align-top [&_td]:text-slate-800 [&_th]:border-b [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-600">
+            <thead>
+                <tr>
+                    <th scope="col">Claim type</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in ClaimRows)
+                {
+                    <tr>
+                        <td class="max-w-[14rem] break-all font-mono text-xs text-slate-700 sm:max-w-none">@row.Type</td>
+                        <td class="break-all font-mono text-xs text-slate-900">@row.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<ProfileClaimRow> ClaimRows { get; set; } = [];
+}

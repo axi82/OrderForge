@@ -1,129 +1,310 @@
 ---
-alwaysApply: true
----
+
+## alwaysApply: true
+
 # OrderForge Cursor Rules
 
 ## Project Overview
-- Solution name: OrderForge
-- Architecture: Clean Architecture + Domain-Driven Design (DDD) + CQRS
-- Language: C# with .NET 10
-- Frontend: Blazor WebAssembly
-- Database: PostgreSQL
-- Auth: Keycloak (OIDC + JWT)
-- Deployment: Docker + Dokploy on Hostinger
-- Logging: **Serilog** (structured logging) with **Seq** as the primary log server/dashboard
+
+* Solution name: OrderForge
+* Architecture: Clean Architecture + Domain-Driven Design (DDD) + CQRS
+* Language: C# with .NET 10
+* Frontend: Blazor WebAssembly
+* Database: PostgreSQL
+* Auth: Keycloak (OIDC + JWT)
+* Deployment: Docker + Dokploy on Hostinger
+* Logging: Serilog with Seq as the primary log server/dashboard
 
 ## Development Workflow
-- Default local development mode must **separate infrastructure from application services**.
-- **Infrastructure services** run in Docker.
-- **Application services** run locally from the IDE or CLI unless explicitly testing containerised application hosting.
-- The normal day-to-day developer workflow is:
-  - PostgreSQL in Docker
-  - Keycloak in Docker
-  - Seq in Docker
-  - OrderForge.Api run locally
-  - OrderForge.Client run locally
-- Full application containerisation is allowed for integration testing, deployment validation, and production-like smoke testing, but it is **not** the default developer experience.
-- Do not assume Visual Studio or container debugging is the preferred path for frontend and API development.
-- Optimise for fast local debugging, simple breakpoints, and short edit/run/test loops.
+
+* Default local development mode must separate infrastructure from application services.
+* Infrastructure services run in Docker.
+* Application services run locally from the IDE or CLI unless explicitly testing containerised application hosting.
+* The normal day-to-day developer workflow is:
+
+  * PostgreSQL in Docker
+  * Keycloak in Docker
+  * Seq in Docker
+  * OrderForge.Api run locally
+  * OrderForge.Client run locally
+* Full application containerisation is allowed for integration testing, deployment validation, and production-like smoke testing, but it is not the default developer experience.
+* Do not assume Visual Studio or container debugging is the preferred path for frontend and API development.
+* Optimise for fast local debugging, simple breakpoints, and short edit/run/test loops.
 
 ## Docker Separation Rules
-- Infrastructure must be separated from application services.
-- Infrastructure includes:
-  - PostgreSQL
-  - Keycloak
-  - Seq
-- Application services include:
-  - OrderForge.Api
-  - OrderForge.Client
-- Prefer separate compose files for clarity:
-  - `docker-compose.infrastructure.yml` for infrastructure only
-  - `docker-compose.full.yml` or an override file for full stack container runs when needed
-- Avoid coupling local development of OrderForge.Api and OrderForge.Client to Docker unless there is a specific need to test container behaviour.
-- If Dockerfiles exist for application projects, treat them as deployment/integration assets first, not the default local development model.
-- Keep container port mappings, volumes, and environment variables explicit and predictable.
-- Seq dashboard should be accessible on port `5341`.
-- PostgreSQL and Keycloak must be reachable from locally running applications via stable local endpoints.
 
-## Core Principles (always follow)
-- Domain layer is king: Rich domain models, aggregates, value objects, domain events. No data access or external concerns in Domain.
-- CQRS: Separate commands and queries. Use MediatR for all application logic.
-- Use immutable value objects where appropriate.
-- FluentValidation for all command/query validation.
-- Never put business logic in controllers or infrastructure.
-- All public APIs must return consistent `Result<T>` or `ProblemDetails`.
-- Naming: PascalCase for types, camelCase for properties in JSON, meaningful domain names (e.g. `Order`, `Customer`, `ProductAggregate`).
-- Tests: xUnit + FluentAssertions + NSubstitute. Test domain behaviour and handler logic only.
+* Infrastructure must be separated from application services.
+* Infrastructure includes:
+
+  * PostgreSQL
+  * Keycloak
+  * Seq
+* Application services include:
+
+  * OrderForge.Api
+  * OrderForge.Client
+* Prefer separate compose files for clarity:
+
+  * `docker-compose.infrastructure.yml` for infrastructure only
+  * `docker-compose.full.yml` or an override file for full-stack container runs when needed
+* Avoid coupling local development of OrderForge.Api and OrderForge.Client to Docker unless there is a specific need to test container behaviour.
+* If Dockerfiles exist for application projects, treat them as deployment and integration assets first, not the default local development model.
+* Keep container port mappings, volumes, and environment variables explicit and predictable.
+* Seq dashboard should be accessible on port `5341`.
+* PostgreSQL and Keycloak must be reachable from locally running applications via stable local endpoints.
+
+## Core Principles
+
+* Domain layer is king: use rich domain models, aggregates, value objects, domain events, and domain rules.
+* Do not put data access, framework concerns, infrastructure concerns, or external service concerns in Domain.
+* CQRS must be used: separate commands and queries.
+* Use MediatR for application use cases, command handlers, query handlers, and notifications where appropriate.
+* Use immutable value objects where appropriate.
+* Use FluentValidation for command and query validation.
+* Never put business logic in controllers, API endpoints, Blazor components, or Infrastructure.
+* Keep business rules in Domain where they are intrinsic to the model.
+* Keep orchestration and use-case flow in Application handlers.
+* Naming must use:
+
+  * PascalCase for C# types and public members
+  * camelCase for JSON properties
+  * Intention-revealing domain names
+  * UK English spelling throughout the codebase, database, UI, and API contracts
+* Aggregate roots should use natural domain names, e.g. `Order`, `Product`, `Customer`, `Organisation`, not technical suffixes such as `OrderAggregate` unless disambiguation is necessary.
 
 ## Architecture Rules
-- Domain contains entities, aggregates, value objects, domain services, domain events, and domain rules only.
-- Application contains use cases, commands, queries, handlers, validators, interfaces, and DTOs.
-- Infrastructure contains data access, external integrations, identity adapters, messaging, logging configuration, and file/storage concerns.
-- API contains HTTP endpoints, middleware, authentication wiring, DI composition, and host configuration.
-- Client contains UI, view models, typed HTTP clients, auth state handling, and presentation concerns only.
-- Never allow Infrastructure dependencies to leak into Domain.
-- Application may depend on Domain, but never on Infrastructure.
-- Infrastructure implements interfaces defined by Application.
-- API is the composition root for backend services.
+
+* Domain contains entities, aggregate roots, value objects, domain services, domain events, domain exceptions, specifications, and domain rules only.
+* Application contains use cases, commands, queries, handlers, validators, interfaces, DTOs, application result types, and application-level behaviours.
+* Infrastructure contains data access, EF Core, external integrations, identity adapters, messaging implementations, logging implementation details, file/storage services, and other technical concerns.
+* API contains HTTP endpoints, middleware, authentication wiring, authorisation wiring, DI composition, host configuration, request/response mapping, and backend composition root concerns.
+* Client contains UI, reusable components, pages, view models, typed HTTP clients, auth state handling, client-side validation, toast handling, and presentation concerns only.
+* Never allow Infrastructure dependencies to leak into Domain.
+* Application may depend on Domain, but never on Infrastructure.
+* Infrastructure implements interfaces defined by Application.
+* API is the composition root for backend services.
+* Client must not reference Domain, Application, or Infrastructure projects directly unless explicitly justified. Prefer API contracts/DTOs shared through a dedicated contracts project if needed.
+* Keep dependencies pointing inwards:
+
+  * Domain has no project dependencies.
+  * Application depends on Domain.
+  * Infrastructure depends on Application and Domain.
+  * API depends on Application, Infrastructure, and Domain only where necessary for composition.
+  * Client communicates with API over HTTP.
+
+## API Response Rules
+
+* Application handlers should return `Result<T>` or an equivalent application result type.
+* API endpoints must translate application results into appropriate HTTP responses.
+* Successful API responses should return consistent DTOs.
+* API error responses must use `ProblemDetails` or `ValidationProblemDetails`.
+* Validation failures must return structured field-level validation details.
+* Do not expose raw exception messages, stack traces, infrastructure details, SQL errors, authentication internals, or sensitive data in API responses.
+* API endpoints should be thin and should not contain business logic.
+* Minimal APIs are preferred in `OrderForge.Api` when the endpoint is simple.
+* Complex endpoint groups may use dedicated endpoint classes or route group extension methods to keep `Program.cs` clean.
 
 ## Database & EF Core Rules
-- Use **pluralised table names** in PostgreSQL (e.g. `organisations`, `orders`, `order_items`, `products`, `users`).
-- Always apply **snake_case** naming convention for tables, columns, foreign keys, and indexes.
-- Use the `EFCore.NamingConventions` package (`modelBuilder.UseSnakeCaseNamingConvention()`) in `ApplicationDbContext.OnModelCreating()`.
-- Never use `[Table("...")]` attributes unless absolutely necessary for overrides.
-- DbSet properties in `DbContext` must be plural (e.g. `public DbSet<Organisation> Organisations { get; set; }`).
-- All database identifiers must follow UK English spelling (e.g. `organisation_id`, not `organization_id`).
 
-## Logging Rules (Serilog + Seq)
-- Use **Serilog** for all logging throughout the solution.
-- Configure Serilog in `Program.cs` using the configuration provider (appsettings + environment variables).
-- Always enrich logs with:
-  - CorrelationId (for request tracing)
-  - OrganisationId / CustomerId (when available)
-  - UserId / Subject (from Keycloak JWT)
-  - OrderNumber, OrderId, etc. for domain events
-- Primary sink in Production and Development: **Seq**
-- Keep additional sinks: Console (for container logs and local diagnostics) + File (rolling daily, mounted volume where applicable)
-- Minimum levels:
-  - Development: Debug
-  - Production: Information
-  - Override `Microsoft.*` and `System.*` to Warning in Production
-- Log structured data, not string concatenation. Prefer:
-  - `Log.Information("Order {OrderNumber} placed for Organisation {OrganisationId}", orderNumber, organisationId)`
-- Never log sensitive data (passwords, tokens, full credit card details, etc.).
-- In Domain and Application layers, inject `ILogger<T>` only where logging is genuinely needed and keep logging focused on meaningful events and failures.
+* PostgreSQL is the primary database.
+* Use pluralised table names in PostgreSQL, e.g. `organisations`, `orders`, `order_items`, `products`, `users`.
+* Always apply snake_case naming for tables, columns, foreign keys, constraints, and indexes.
+* Use the `EFCore.NamingConventions` package with `modelBuilder.UseSnakeCaseNamingConvention()` in `ApplicationDbContext.OnModelCreating()`.
+* Never use `[Table("...")]` attributes unless absolutely necessary for explicit overrides.
+* Entity class names must be singular, e.g. `Order`, `Organisation`, `OrderItem`.
+* DbSet properties in `DbContext` must be plural, e.g. `Orders`, `Organisations`, `OrderItems`.
+* Physical database table and column names must be pluralised and snake_case.
+* All database identifiers must follow UK English spelling, e.g. `organisation_id`, not `organization_id`.
+* `ApplicationDbContext` must live in the Infrastructure project, not the Application project.
+* Application code must not depend directly on EF Core.
+* Application should depend on interfaces for repositories, unit-of-work abstractions, read models, or query services where needed.
+* EF Core configuration should use `IEntityTypeConfiguration<T>` classes for non-trivial entity mappings.
+* Avoid leaking EF Core tracking entities outside the Infrastructure/Application boundary.
+* Queries should project to DTOs/read models where appropriate rather than returning entire aggregates unnecessarily.
+* Migrations belong with the Infrastructure project unless the solution explicitly uses a dedicated migrations project.
+
+## Logging Rules: Serilog + Seq
+
+* Use Serilog for all application logging.
+* Configure Serilog in `Program.cs` using configuration from appsettings and environment variables.
+* API and Infrastructure are responsible for logging configuration and external logging sinks.
+* Do not inject `ILogger<T>` into Domain entities, aggregates, value objects, or domain services.
+* Domain should express meaningful business occurrences through domain events.
+* Application handlers may inject `ILogger<T>` where useful for use-case tracing, important workflow decisions, failures, and unexpected conditions.
+* Log structured data, not string concatenation.
+* Prefer:
+
+  * `Log.Information("Order {OrderNumber} placed for Organisation {OrganisationId}", orderNumber, organisationId)`
+* Never log sensitive data such as passwords, tokens, secrets, full payment details, or personally sensitive customer information.
+* Always enrich logs where available with:
+
+  * CorrelationId
+  * OrganisationId / CustomerId
+  * UserId / Subject from Keycloak JWT
+  * OrderNumber, OrderId, and other relevant domain identifiers
+* Primary sink in Production and Development: Seq.
+* Keep additional sinks:
+
+  * Console for container logs and local diagnostics
+  * File for rolling daily logs, with mounted volumes where applicable
+* Minimum levels:
+
+  * Development: Debug
+  * Production: Information
+  * Override `Microsoft.*` and `System.*` to Warning in Production.
 
 ## Authentication & Environment Rules
-- Keycloak is the identity provider for local and deployed environments.
-- Keycloak realm and client configuration must exist before authentication-dependent backend flows are exercised.
-- Local applications must read configuration from appsettings plus environment variables.
-- Never commit real secrets. Use `.env`, user secrets, or environment-specific secret stores.
-- Use stable local URLs for infrastructure dependencies so local projects and containers can be switched with minimal config changes.
+
+* Keycloak is the identity provider for local and deployed environments.
+* Authentication must use OIDC/JWT standards.
+* Keycloak realm and client configuration must exist before authentication-dependent backend flows are exercised.
+* Local applications must read configuration from appsettings plus environment variables.
+* Never commit real secrets.
+* Use `.env`, user secrets, environment variables, or environment-specific secret stores.
+* Use stable local URLs for infrastructure dependencies so local projects and containers can be switched with minimal configuration changes.
+* API authorisation policies should be explicit and named where possible.
+* Do not hard-code realm names, client secrets, authority URLs, or signing details in source code.
+* Do not expose tokens, refresh tokens, client secrets, or identity-provider internals in logs or UI errors.
 
 ## Coding Style
-- Use records for DTOs and value objects where appropriate.
-- Minimal APIs are preferred in `OrderForge.Api` when the endpoint is simple.
-- Always add XML documentation for public members in Domain and Application.
-- Keep classes small and focused (Single Responsibility Principle).
-- Prefer explicit, intention-revealing names over abbreviations.
-- Keep frontend and backend concerns clearly separated.
+
+* Use records for DTOs and value objects where appropriate.
+* Use classes for entities and aggregate roots where identity and lifecycle matter.
+* Always add XML documentation for public members in Domain and Application.
+* Keep classes small and focused.
+* Follow the Single Responsibility Principle.
+* Prefer explicit, intention-revealing names over abbreviations.
+* Keep frontend and backend concerns clearly separated.
+* Avoid primitive obsession in Domain; prefer value objects for meaningful concepts.
+* Keep constructors and factory methods explicit about required invariants.
+* Prefer guard clauses over deeply nested conditional logic.
+* Do not introduce unnecessary abstractions before they provide clear value.
+* Keep code readable and maintainable over clever.
+
+## CQRS & MediatR Rules
+
+* Commands represent intent to change state.
+* Queries represent intent to read state and must not mutate state.
+* Each command/query should have a dedicated handler.
+* Use FluentValidation validators for commands and queries where validation is needed.
+* Validation should run before handler execution through a pipeline behaviour where practical.
+* Command handlers should load aggregates, call domain behaviour, persist changes, and publish relevant domain/application events.
+* Query handlers should optimise for read needs and may project directly to DTOs/read models.
+* Do not return EF Core entities directly from queries.
+* Do not put HTTP-specific types such as `HttpContext`, `IResult`, `ActionResult`, or `ProblemDetails` inside Application handlers.
+
+## Domain Modelling Rules
+
+* Aggregates must protect their own invariants.
+* External code should not be able to place an aggregate into an invalid state.
+* Prefer private setters and behaviour methods over public property mutation.
+* Use value objects for concepts with equality based on value rather than identity.
+* Use domain events to represent meaningful business occurrences.
+* Domain events should be named in past tense, e.g. `OrderPlaced`, `CustomerCreated`, `PaymentCaptured`.
+* Domain services should only be used when behaviour does not naturally belong to a single entity or value object.
+* Do not place persistence, logging, HTTP, configuration, or infrastructure concerns in Domain.
+
+## UI/UX Error Handling Rules: Blazor Client
+
+* All user-facing operation feedback must be communicated through the Toast Notification System.
+* Do not show raw JSON, console logs, stack traces, raw exception messages, or plain text dumps to end users.
+* Use the central `ToastService` or equivalent notification service for:
+
+  * API error responses
+  * `ProblemDetails`
+  * Validation failures
+  * Business rule violations
+  * Unexpected exceptions
+  * Success confirmations, e.g. "Password changed successfully" or "Order placed"
+* Toast behaviour standards:
+
+  * Error toasts: red/danger theme, visible for 6–8 seconds or until dismissed
+  * Success toasts: green/success theme, auto-dismiss after 4 seconds
+  * Warning toasts: yellow/amber for non-critical issues
+  * Position: top-right corner, floating and non-blocking
+* Inline field validation must still be used together with toasts.
+* Use DataAnnotations, validation components, or the project-standard validation approach for forms.
+* Never expose raw exception messages or stack traces to the end user.
+* All API calls should handle `HttpResponseMessage` properly and convert `ProblemDetails` into user-friendly messages.
+* Critical or blocking errors, such as session expiry or insufficient permissions, may additionally use a modal dialog, but toasts remain the primary feedback mechanism.
+* ToastService should be registered as a singleton in the Blazor WebAssembly Client project unless the implementation requires a narrower lifetime.
+* ToastService must avoid holding stale component references and should communicate via events, observable state, or another safe notification mechanism.
+* All pages and components that perform API operations must inject and use `ToastService` or the approved notification abstraction.
+
+## Blazor Component Rules
+
+* Every significant UI feature, form, card, table, modal, or repeated UI section must be built as an individual reusable component rather than placed directly into a monolithic page.
+* Pages (`*.razor` files under `Pages/`) must remain thin wrappers that only:
+
+  * Declare the route using `@page`
+  * Compose one or more components
+  * Handle page-level concerns such as title, breadcrumbs, meta, and layout
+* When adding new UI functionality, default to creating reusable components.
+* Only ask the user whether to use a reusable component or a single page when the scope is ambiguous, experimental, or clearly one-off.
+* Before creating a new component, check existing components in `Shared/Components/` and reuse, extend, or refactor them where appropriate.
+* If a similar component already exists, prefer extending it over duplicating it.
+* Component organisation:
+
+  * `Shared/Components/Forms/` for forms
+  * `Shared/Components/Common/` for generic UI such as cards, buttons, layout helpers, toasts, and loading states
+  * `Shared/Components/Orders/` for order-specific UI
+  * `Shared/Components/Products/` for product-specific UI
+  * Additional domain-specific folders where appropriate
+* Components must be:
+
+  * Self-contained
+  * Well-parameterised using `[Parameter]`
+  * Communicative using `EventCallback`
+  * Reusable across multiple contexts where practical
+  * Kept under roughly 150–200 lines where possible
+* Monolithic pages over 200 lines of markup and logic are prohibited unless explicitly justified.
+* Keep component code-behind focused on presentation and interaction only.
+* Do not put business rules, persistence logic, or API orchestration directly into large page components.
+* Prefer typed API clients or client-side services for API communication.
 
 ## Testing Rules
-- Use xUnit + FluentAssertions + NSubstitute.
-- Prioritise tests for:
-  - Domain behaviour
-  - Command/query handlers
-  - Validation
-  - Important application workflows
-- Do not over-focus on framework plumbing or trivial tests.
-- Integration tests may use containerised infrastructure where useful, but keep unit and handler tests fast and local.
+
+* Use xUnit, FluentAssertions, and NSubstitute.
+* Unit tests should focus on:
+
+  * Domain behaviour
+  * Aggregate invariants
+  * Value objects
+  * Domain services
+  * Validators
+  * Command handlers
+  * Query handlers
+  * Important application workflows
+* Do not over-focus on framework plumbing or trivial tests.
+* Integration tests are allowed for important infrastructure-backed workflows, API endpoints, database mappings, migrations, and authentication flows where useful.
+* Integration tests may use containerised infrastructure where useful.
+* Keep unit and handler tests fast and local.
+* Avoid brittle tests that assert implementation details rather than observable behaviour.
+* Test names should clearly describe the behaviour being verified.
+* Prefer Arrange/Act/Assert structure.
 
 ## Deployment Rules
-- Production deployment may run fully containerised.
-- Local development does not need to mirror production container-for-container if that harms developer productivity.
-- Dockerfiles for application services must remain valid for CI/CD and deployment even if developers usually run the applications locally.
-- When suggesting changes, prefer solutions that preserve both:
-  - a fast local developer workflow
-  - a clean deployment path
 
-When suggesting or editing code, always respect these rules.
+* Production deployment may run fully containerised.
+* Local development does not need to mirror production container-for-container if that harms developer productivity.
+* Dockerfiles for application services must remain valid for CI/CD and deployment even if developers usually run the applications locally.
+* When suggesting changes, prefer solutions that preserve both:
+
+  * A fast local developer workflow
+  * A clean deployment path
+* Full-stack Docker Compose may be used for integration testing, smoke testing, deployment validation, and production-like testing.
+* Do not make the default development workflow dependent on full application containerisation.
+
+## Cursor Behaviour Rules
+
+* When suggesting or editing code, always respect these rules.
+* Prefer the existing architecture and conventions over introducing new patterns.
+* When uncertain, choose the option that best preserves Clean Architecture boundaries, fast local development, and maintainability.
+* Do not add new packages unless they are clearly justified.
+* Do not move business logic into API endpoints, Blazor components, Infrastructure services, or controllers.
+* Do not introduce direct dependencies from Domain or Application to Infrastructure.
+* When creating new files, place them in the correct project and folder based on the architecture rules.
+* When modifying existing code, preserve public contracts unless the user explicitly asks for breaking changes.
+* When adding UI, default to reusable Blazor components and toast-based user feedback.
+* When adding API functionality, ensure validation, result mapping, error handling, and logging are consistent with the rules above.
+* When adding database changes, ensure PostgreSQL, snake_case, plural table names, UK English spelling, and EF Core configuration rules are followed.
