@@ -1,0 +1,179 @@
+@using OrderForge.Client.Services
+@implements IAsyncDisposable
+@inject IToastService ToastService
+
+<div
+    class="pointer-events-none fixed top-4 end-4 z-[10000] flex w-[min(100vw-2rem,22rem)] flex-col gap-3 p-0 sm:end-6"
+    aria-label="Notifications"
+>
+    <div class="sr-only" aria-live="polite" aria-atomic="true">@ToastService.LiveRegionText</div>
+    @foreach (var toast in _snapshot)
+    {
+        var exiting = _exiting.Contains(toast.Id);
+        <div
+            class="@ToastCardClass(toast, exiting) pointer-events-auto shadow-lg ring-1 transition duration-200 ease-out @(exiting ? "toast-animate-out" : "toast-animate-in")"
+            role="status"
+            tabindex="-1"
+            @onpointerenter="() => AdjustPauseDepth(toast.Id, 1)"
+            @onpointerleave="() => AdjustPauseDepth(toast.Id, -1)"
+        >
+            <div class="flex gap-3">
+                <div class="mt-0.5 shrink-0" aria-hidden="true">
+                    @if (toast.Severity == ToastSeverity.Success)
+                    {
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    }
+                    else if (toast.Severity == ToastSeverity.Warning)
+                    {
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                    }
+                </div>
+                <div class="min-w-0 flex-1">
+                    @if (!string.IsNullOrEmpty(toast.Title))
+                    {
+                        <p class="text-sm font-semibold leading-snug">@toast.Title</p>
+                    }
+                    <p class="@(string.IsNullOrEmpty(toast.Title) ? "text-sm font-medium leading-snug" : "mt-1 text-sm leading-snug")">
+                        @toast.Message
+                    </p>
+                </div>
+                @if (toast.ShowCloseButton)
+                {
+                    <button
+                        type="button"
+                        class="shrink-0 rounded-md p-1 text-current opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current/40"
+                        aria-label="Dismiss notification"
+                        @onfocus="() => AdjustPauseDepth(toast.Id, 1)"
+                        @onblur="() => AdjustPauseDepth(toast.Id, -1)"
+                        @onclick="() => DismissWithAnimationAsync(toast.Id)"
+                    >
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly Dictionary<Guid, int> _pauseDepth = new();
+    private readonly HashSet<Guid> _exiting = new();
+    private IReadOnlyList<ToastInstance> _snapshot = Array.Empty<ToastInstance>();
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _cts;
+
+    protected override void OnInitialized() => ToastService.Changed += OnToastServiceChanged;
+
+    protected override void OnParametersSet() => _snapshot = ToastService.Toasts;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _cts = new CancellationTokenSource();
+            _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+            _ = RunExpiryLoopAsync(_cts.Token);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void OnToastServiceChanged(object? sender, EventArgs e) =>
+        _ = InvokeAsync(
+            () =>
+            {
+                _snapshot = ToastService.Toasts;
+                PrunePauseDepth();
+                StateHasChanged();
+            });
+
+    private void PrunePauseDepth()
+    {
+        var ids = _snapshot.Select(t => t.Id).ToHashSet();
+        foreach (var id in _pauseDepth.Keys.Where(k => !ids.Contains(k)).ToArray())
+        {
+            _pauseDepth.Remove(id);
+        }
+    }
+
+    private void AdjustPauseDepth(Guid id, int delta)
+    {
+        _pauseDepth.TryGetValue(id, out var depth);
+        depth += delta;
+        if (depth < 0)
+            depth = 0;
+
+        if (depth == 0)
+            _pauseDepth.Remove(id);
+        else
+            _pauseDepth[id] = depth;
+
+        ToastService.SetPaused(id, depth > 0);
+    }
+
+    private async Task RunExpiryLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (_timer is not null && await _timer.WaitForNextTickAsync(ct))
+            {
+                var now = DateTime.UtcNow;
+                foreach (var toast in ToastService.Toasts.ToArray())
+                {
+                    if (_exiting.Contains(toast.Id))
+                        continue;
+                    if (!toast.IsPaused && now >= toast.DismissAtUtc)
+                        await DismissWithAnimationAsync(toast.Id);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task DismissWithAnimationAsync(Guid id)
+    {
+        if (!_exiting.Add(id))
+            return;
+
+        _pauseDepth.Remove(id);
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(200);
+        ToastService.Remove(id);
+        _exiting.Remove(id);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string ToastCardClass(ToastInstance toast, bool exiting)
+    {
+        var baseCls = "rounded-xl border p-4 ";
+        return toast.Severity switch
+        {
+            ToastSeverity.Success => baseCls + "border-emerald-200 bg-emerald-50 text-emerald-900",
+            ToastSeverity.Warning => baseCls + "border-amber-200 bg-amber-50 text-amber-950",
+            _ => baseCls + "border-rose-200 bg-rose-50 text-rose-950",
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ToastService.Changed -= OnToastServiceChanged;
+        if (_cts is not null)
+            await _cts.CancelAsync();
+        _timer?.Dispose();
+        _cts?.Dispose();
+    }
+}

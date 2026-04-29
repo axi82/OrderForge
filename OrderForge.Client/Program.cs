@@ -11,6 +11,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var apiUri = builder.GetOrderForgeApiBaseUri();
 
 builder.Services
+    .AddSingleton<IToastService, ToastService>()
     .AddScoped<AppNavigator>()
     .AddOrderForgeAuthorizationPolicies()
     .AddOrderForgeOidcAuthentication(builder.Configuration)
