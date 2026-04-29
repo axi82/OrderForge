@@ -101,7 +101,10 @@ try
             p => p.RequireRole("SupplierAdmin", "CompanyAdmin"));
         options.AddPolicy(
             AuthorizationPolicies.TradeAccount,
-            p => p.RequireRole(KnownRealmRoles.Customer, KnownRealmRoles.CompanyAdmin));
+            p => p.RequireRole(
+                KnownRealmRoles.Customer,
+                KnownRealmRoles.CompanyAdmin,
+                KnownRealmRoles.TradeAccount));
     });
     builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationFailureLoggingMiddlewareResultHandler>();
 

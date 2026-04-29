@@ -161,7 +161,9 @@
         user.IsInRole(AuthorizationPolicies.SupplierAdmin) || user.IsInRole("SupplierViewer");
 
     private static bool IsTradeCustomer(ClaimsPrincipal user) =>
-        user.IsInRole(AuthorizationPolicies.Customer) || user.IsInRole("CompanyAdmin");
+        user.IsInRole(AuthorizationPolicies.Customer)
+        || user.IsInRole("CompanyAdmin")
+        || user.IsInRole(AuthorizationPolicies.TradeAccount);
 
     private static string GreetingPrefix() =>
         DateTime.UtcNow.Hour switch

@@ -26,7 +26,9 @@ public sealed class HttpContextCurrentUser(IHttpContextAccessor httpContextAcces
 
     public bool IsCompanyAdmin => User?.IsInRole(KnownRealmRoles.CompanyAdmin) == true;
 
-    public bool IsCustomer => User?.IsInRole(KnownRealmRoles.Customer) == true;
+    public bool IsCustomer =>
+        User?.IsInRole(KnownRealmRoles.Customer) == true
+        || User?.IsInRole(KnownRealmRoles.TradeAccount) == true;
 
     public string? KeycloakOrganizationId => User?.FindFirstValue(KeycloakJwtClaimsMapper.KeycloakOrganizationIdClaim);
 }

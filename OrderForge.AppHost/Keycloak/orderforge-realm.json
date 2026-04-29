@@ -110,6 +110,15 @@
         "attributes": {}
       },
       {
+        "id": "e8c2b1a0-7d3e-4f51-9c82-1a0b2c3d4e5f",
+        "name": "TradeAccount",
+        "description": "Trade portal buyer (same access as Customer); use Customer or CompanyAdmin for company admins.",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "a13d2499-42d5-4afc-ac74-d5e37280c577",
+        "attributes": {}
+      },
+      {
         "id": "23da7691-fb7b-40dc-9d19-16afa158e5cc",
         "name": "OrderApprover",
         "description": "Can approve large orders",

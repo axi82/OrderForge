@@ -139,6 +139,8 @@
             return false;
         }
 
-        return user.IsInRole("Customer") || user.IsInRole("CompanyAdmin");
+        return user.IsInRole("Customer")
+            || user.IsInRole("CompanyAdmin")
+            || user.IsInRole(AuthorizationPolicies.TradeAccount);
     }
 }
