@@ -1,17 +1,19 @@
 @page "/catalog"
 @attribute [Authorize]
+@implements IAsyncDisposable
+@inject ICatalogApiClient CatalogApi
 
 <PageTitle>Catalogue</PageTitle>
 
 <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
     <div>
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Catalogue</h1>
-        <p class="mt-2 max-w-2xl text-slate-600">Search and browse products with your contract pricing and live stock status.</p>
+        <p class="mt-2 max-w-2xl text-slate-600">Search and browse active products. Pricing and availability will appear here in a later update.</p>
     </div>
 </div>
 
-<div class="mb-8 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:gap-6">
-    <div class="relative min-w-0 flex-1">
+<div class="mb-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="relative min-w-0">
         <label class="sr-only" for="catalog-search">Search</label>
         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -22,101 +24,268 @@
             id="catalog-search"
             type="search"
             class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            placeholder="Search by name or SKU…"
-            @bind="searchQuery"
-            @bind:event="oninput"
+            placeholder="Search by name, SKU, brand, or product code…"
+            value="@searchQuery"
+            @oninput="OnSearchInput"
+            @onkeydown="OnSearchKeyDown"
         />
     </div>
-    <div class="flex flex-wrap gap-2">
-        @foreach (var c in Categories)
+</div>
+
+@if (!string.IsNullOrEmpty(loadError))
+{
+    <div class="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-900 shadow-sm" role="alert">
+        <p class="font-medium">We couldn’t load the catalogue</p>
+        <p class="mt-1 text-sm text-rose-800">@loadError</p>
+        <button
+            type="button"
+            class="mt-3 rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+            @onclick="RetryAsync"
+        >
+            Try again
+        </button>
+    </div>
+}
+
+@if (isLoading)
+{
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        @for (var i = 0; i < PageSize; i++)
         {
-            <button
-                type="button"
-                class="@FilterChipClass(c)"
-                @onclick="() => ToggleCategory(c)"
-            >
-                @c
-            </button>
+            <CatalogProductCardSkeleton />
         }
     </div>
-</div>
-
-<div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-    @foreach (var p in FilteredProducts)
-    {
-        <ProductCard
-            Title="@p.Title"
-            Sku="@p.Sku"
-            CustomerPrice="@p.CustomerPrice"
-            StockStatus="@p.StockStatus"
-            OnAddToCart="@(() => OnAddAsync(p))"
-        />
-    }
-</div>
-
-@if (!FilteredProducts.Any())
+}
+else if (string.IsNullOrEmpty(loadError))
 {
-    <p class="mt-10 text-center text-slate-500">No products match your filters.</p>
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        @foreach (var p in items)
+        {
+            <ProductCard
+                Title="@p.Name"
+                Sku="@p.Sku"
+                ShortDescription="@p.ShortDescription"
+                ImageUrl="@PlaceholderImageUrl"
+            />
+        }
+    </div>
+
+    @if (items.Count == 0)
+    {
+        <p class="mt-10 text-center text-slate-500">No products match your search.</p>
+    }
+    else
+    {
+        <div class="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row">
+            <p class="text-sm text-slate-600">
+                @if (totalCount == 0)
+                {
+                    <span>Showing 0 of 0</span>
+                }
+                else
+                {
+                    <span>Showing <span class="font-medium text-slate-900">@FirstItemIndex</span>–<span class="font-medium text-slate-900">@LastItemIndex</span> of <span class="font-medium text-slate-900">@totalCount</span></span>
+                }
+            </p>
+            <div class="flex gap-2">
+                <button
+                    type="button"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled="@(currentPage <= 1 || isLoading)"
+                    @onclick="GoPreviousAsync"
+                >
+                    Previous
+                </button>
+                <button
+                    type="button"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled="@(!hasNextPage || isLoading)"
+                    @onclick="GoNextAsync"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    }
 }
 
 @code {
+    private const string PlaceholderImageUrl = "/images/catalog-placeholder.svg";
+    private const int PageSize = 24;
+
+    private readonly List<CatalogProductItem> items = [];
+
     private string searchQuery = string.Empty;
+    private int currentPage = 1;
+    private int totalCount;
+    private bool isLoading = true;
+    private string? loadError;
 
-    private readonly HashSet<string> activeCategories = [];
+    private CancellationTokenSource? searchDebounceCts;
 
-    private static readonly string[] Categories = ["All", "Dairy", "Dry goods", "Beverages", "Frozen"];
+    private int FirstItemIndex => totalCount == 0 ? 0 : (currentPage - 1) * PageSize + 1;
 
-    private readonly List<ProductVm> products =
-    [
-        new("Whole milk 2L", "DAI-001", 2.49m, "In stock", "Dairy"),
-        new("Cheddar block 500g", "DAI-102", 6.99m, "Low stock", "Dairy"),
-        new("Pasta penne 5kg", "DRY-220", 18.50m, "In stock", "Dry goods"),
-        new("Tomato passata 6x700ml", "DRY-305", 12.00m, "In stock", "Dry goods"),
-        new("Sparkling water 24pk", "BEV-012", 14.25m, "Out of stock", "Beverages"),
-        new("Frozen peas 10kg", "FRZ-088", 24.90m, "In stock", "Frozen"),
-    ];
+    private int LastItemIndex => Math.Min(currentPage * PageSize, totalCount);
 
-    private IEnumerable<ProductVm> FilteredProducts =>
-        products.Where(p =>
-        {
-            var catOk = activeCategories.Count == 0
-                || activeCategories.Contains("All")
-                || activeCategories.Contains(p.Category);
-            var q = searchQuery.Trim();
-            var textOk = string.IsNullOrEmpty(q)
-                || p.Title.Contains(q, StringComparison.OrdinalIgnoreCase)
-                || p.Sku.Contains(q, StringComparison.OrdinalIgnoreCase);
-            return catOk && textOk;
-        });
+    private bool hasNextPage => currentPage * PageSize < totalCount;
 
-    private string FilterChipClass(string category)
+    protected override async Task OnInitializedAsync() => await LoadPageAsync();
+
+    private async Task OnSearchInput(ChangeEventArgs e)
     {
-        var on = (activeCategories.Count == 0 && category == "All")
-            || activeCategories.Contains(category);
-        return on
-            ? "rounded-full bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm"
-            : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50";
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+        await DebounceSearchAsync();
     }
 
-    private void ToggleCategory(string category)
+    private void OnSearchKeyDown(KeyboardEventArgs e)
     {
-        if (category == "All")
+        if (!string.Equals(e.Key, "Enter", StringComparison.OrdinalIgnoreCase))
         {
-            activeCategories.Clear();
-            activeCategories.Add("All");
             return;
         }
 
-        activeCategories.Remove("All");
-        if (!activeCategories.Add(category))
-            activeCategories.Remove(category);
-        if (activeCategories.Count == 0)
-            activeCategories.Add("All");
+        searchDebounceCts?.Cancel();
+        currentPage = 1;
+        _ = LoadPageAsync();
     }
 
-    private Task OnAddAsync(ProductVm p) =>
-        // Placeholder until cart API exists
-        Task.CompletedTask;
+    private async Task DebounceSearchAsync()
+    {
+        searchDebounceCts?.Cancel();
+        searchDebounceCts?.Dispose();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
 
-    private sealed record ProductVm(string Title, string Sku, decimal CustomerPrice, string StockStatus, string Category);
+        try
+        {
+            await Task.Delay(300, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        currentPage = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task GoPreviousAsync()
+    {
+        if (currentPage <= 1)
+        {
+            return;
+        }
+
+        currentPage--;
+        await LoadPageAsync();
+    }
+
+    private async Task GoNextAsync()
+    {
+        if (!hasNextPage)
+        {
+            return;
+        }
+
+        currentPage++;
+        await LoadPageAsync();
+    }
+
+    private async Task RetryAsync()
+    {
+        loadError = null;
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        await InvokeAsync(() =>
+        {
+            isLoading = true;
+            loadError = null;
+            StateHasChanged();
+            return Task.CompletedTask;
+        });
+
+        try
+        {
+            var search = string.IsNullOrWhiteSpace(searchQuery) ? null : searchQuery.Trim();
+            var result = await CatalogApi.GetProductsAsync(currentPage, PageSize, search).ConfigureAwait(false);
+
+            totalCount = result.TotalCount;
+            var maxPage = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)PageSize);
+            var clamped = Math.Clamp(currentPage, 1, maxPage);
+            if (clamped != currentPage)
+            {
+                currentPage = clamped;
+                result = await CatalogApi.GetProductsAsync(currentPage, PageSize, search).ConfigureAwait(false);
+                totalCount = result.TotalCount;
+            }
+
+            items.Clear();
+            items.AddRange(result.Items);
+        }
+        catch (HttpRequestException ex)
+        {
+            loadError = MapCatalogError(ex);
+            items.Clear();
+            totalCount = 0;
+        }
+        catch (TaskCanceledException)
+        {
+            loadError = "The request took too long or was cancelled. Please try again.";
+            items.Clear();
+            totalCount = 0;
+        }
+        catch (Exception)
+        {
+            loadError = "Something unexpected went wrong. Please wait a moment and try again.";
+            items.Clear();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string MapCatalogError(HttpRequestException ex)
+    {
+        if (ex.StatusCode is null)
+        {
+            return "Check your internet connection, then tap “Try again”. If the problem continues, contact support.";
+        }
+
+        var code = ex.StatusCode.Value;
+        if (code == System.Net.HttpStatusCode.Unauthorized)
+        {
+            return "Your session may have expired. Sign in again, then return to the catalogue.";
+        }
+
+        if (code == System.Net.HttpStatusCode.Forbidden)
+        {
+            return "Your account isn’t allowed to view the catalogue. If this is a mistake, contact support.";
+        }
+
+        if (code == System.Net.HttpStatusCode.ServiceUnavailable || code == System.Net.HttpStatusCode.BadGateway)
+        {
+            return "The catalogue is temporarily unavailable. Please try again in a few minutes.";
+        }
+
+        if ((int)code >= 500)
+        {
+            return "We’re having trouble on our servers. Please try again shortly.";
+        }
+
+        return "Check your internet connection, then tap “Try again”. If the problem continues, contact support.";
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        searchDebounceCts?.Cancel();
+        searchDebounceCts?.Dispose();
+        searchDebounceCts = null;
+        return ValueTask.CompletedTask;
+    }
 }

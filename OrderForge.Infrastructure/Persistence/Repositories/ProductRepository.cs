@@ -25,13 +25,33 @@ public sealed class ProductRepository(OrderForgeDbContext dbContext)
             .AnyAsync(p => p.ProductCode.ToLower() == normalized.ToLower(), cancellationToken);
     }
 
-    public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
+    public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
         string? search,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        GetFilteredPagedAsync(activeOnly: false, page, pageSize, search, cancellationToken);
+
+    public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetActivePagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default) =>
+        GetFilteredPagedAsync(activeOnly: true, page, pageSize, search, cancellationToken);
+
+    private async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetFilteredPagedAsync(
+        bool activeOnly,
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken)
     {
         var query = DbContext.Set<Product>().AsNoTracking().AsQueryable();
+
+        if (activeOnly)
+        {
+            query = query.Where(p => p.IsActive);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {

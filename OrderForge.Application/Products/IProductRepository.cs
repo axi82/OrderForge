@@ -14,4 +14,11 @@ public interface IProductRepository : IRepository<Product>
         int pageSize,
         string? search,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Active products only; same search and sort semantics as <see cref="GetPagedAsync"/>.</summary>
+    Task<(IReadOnlyList<Product> Items, int TotalCount)> GetActivePagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default);
 }
