@@ -1,0 +1,36 @@
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+    <div class="flex min-w-[12rem] flex-1 flex-col gap-1">
+        <label class="text-xs font-medium text-gray-600" for="product-search">Search</label>
+        <input id="product-search"
+               class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+               value="@SearchText"
+               @oninput="OnSearchInputAsync"
+               placeholder="SKU, product code, name, part no., barcode…"
+               disabled="@Loading" />
+    </div>
+    <button type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+            disabled="@Loading"
+            @onclick="SearchAsync">
+        Search
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string SearchText { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SearchTextChanged { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public EventCallback OnSearch { get; set; }
+
+    private Task OnSearchInputAsync(ChangeEventArgs e) =>
+        SearchTextChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+
+    private Task SearchAsync() => OnSearch.InvokeAsync();
+}

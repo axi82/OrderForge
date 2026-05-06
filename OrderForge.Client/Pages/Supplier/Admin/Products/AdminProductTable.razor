@@ -1,0 +1,66 @@
+<div class="overflow-x-auto">
+    <table class="w-full border-collapse text-xs align-middle sm:text-sm [&_tbody_tr:nth-child(odd)]:bg-gray-50 [&_td]:border-b [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-2 [&_th]:border-b [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-2 [&_th]:text-left">
+        <thead>
+            <tr>
+                <th>Product code</th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Part no.</th>
+                <th>In stock</th>
+                <th>Alloc.</th>
+                <th>On order</th>
+                <th>Free</th>
+                <th>Barcode</th>
+                <th>Brand</th>
+                <th>Cost</th>
+                <th>Base</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Items)
+            {
+                <tr>
+                    <td><code class="text-xs sm:text-sm">@row.ProductCode</code></td>
+                    <td><code class="text-xs sm:text-sm">@row.Sku</code></td>
+                    <td class="max-w-[14rem] truncate" title="@row.Name">@row.Name</td>
+                    <td class="max-w-[8rem] truncate" title="@(row.PartNumber ?? "")">@(string.IsNullOrEmpty(row.PartNumber) ? "—" : row.PartNumber)</td>
+                    <td>@row.QuantityInStock.ToString("N2")</td>
+                    <td>@row.QuantityAllocated.ToString("N2")</td>
+                    <td>@row.QuantityOnOrder.ToString("N2")</td>
+                    <td>@row.FreeStock.ToString("N2")</td>
+                    <td class="max-w-[7rem] truncate font-mono text-xs" title="@(row.Barcode ?? "")">@(string.IsNullOrEmpty(row.Barcode) ? "—" : row.Barcode)</td>
+                    <td>@(string.IsNullOrEmpty(row.Brand) ? "—" : row.Brand)</td>
+                    <td>@row.CostPrice.ToString("N2")</td>
+                    <td>@row.BasePrice.ToString("N2")</td>
+                    <td>@(row.IsActive ? "Yes" : "No")</td>
+                    <td class="text-end">
+                        <AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
+                            <Authorized Context="deleteAuth">
+                                <button
+                                    type="button"
+                                    class="rounded-md border border-red-200 bg-white px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                    disabled="@(DeletingId == row.Id)"
+                                    @onclick="@(() => OnDeleteRequested.InvokeAsync(row))">
+                                    @(DeletingId == row.Id ? "…" : "Delete")
+                                </button>
+                            </Authorized>
+                        </AuthorizeView>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ProductDto> Items { get; set; } = Array.Empty<ProductDto>();
+
+    [Parameter]
+    public int? DeletingId { get; set; }
+
+    [Parameter]
+    public EventCallback<ProductDto> OnDeleteRequested { get; set; }
+}

@@ -1,0 +1,66 @@
+<div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm text-gray-600">
+        Showing @ShowingStart–@ShowingEnd of @TotalCount
+    </p>
+    <div class="flex flex-wrap items-center gap-2">
+        <label class="text-sm text-gray-600" for="product-page-size">Rows per page</label>
+        <select id="product-page-size"
+                class="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm shadow-sm"
+                disabled="@Loading"
+                value="@PageSize"
+                @onchange="OnPageSizeChanged">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+        <button type="button"
+                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                disabled="@(Loading || CurrentPage <= 1)"
+                @onclick="GoPreviousAsync">
+            Previous
+        </button>
+        <span class="text-sm text-gray-600">Page @(CurrentPage) of @MaxPage</span>
+        <button type="button"
+                class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                disabled="@(Loading || CurrentPage >= MaxPage)"
+                @onclick="GoNextAsync">
+            Next
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int ShowingStart { get; set; }
+
+    [Parameter]
+    public int ShowingEnd { get; set; }
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public int PageSize { get; set; }
+
+    [Parameter]
+    public int MaxPage { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnPageSizeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrevious { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    private Task GoPreviousAsync() => OnPrevious.InvokeAsync();
+
+    private Task GoNextAsync() => OnNext.InvokeAsync();
+}
