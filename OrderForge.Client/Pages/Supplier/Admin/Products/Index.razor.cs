@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using OrderForge.Client.Models;
 using OrderForge.Client.Services;
@@ -20,6 +23,11 @@ public partial class Index
     private int? deletingId;
     private readonly CreateProductRequest createModel = new();
 
+    private ElementReference _addProductDialog;
+    private AdminProductSearchBar? _searchBar;
+    private bool isSupplierAdmin;
+    private bool focusSkuAfterRender;
+
     private int MaxPage => result is null || result.TotalCount == 0
         ? 1
         : Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)pageSize));
@@ -30,7 +38,19 @@ public partial class Index
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isSupplierAdmin = (await AuthorizationService.AuthorizeAsync(authState.User, AuthorizationPolicies.SupplierAdmin))
+            .Succeeded;
         await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusSkuAfterRender)
+        {
+            focusSkuAfterRender = false;
+            await Js.InvokeVoidAsync("orderForgeDialog.focusById", "admin-product-modal-sku");
+        }
     }
 
     private async Task ApplySearchAsync()
@@ -96,6 +116,64 @@ public partial class Index
         }
     }
 
+    private void ResetCreateModel()
+    {
+        createModel.Sku = string.Empty;
+        createModel.ProductCode = string.Empty;
+        createModel.Name = string.Empty;
+        createModel.ShortDescription = string.Empty;
+        createModel.Description = null;
+        createModel.Brand = null;
+        createModel.CommodityCodeDescription = null;
+        createModel.SupplierAccountCode = null;
+        createModel.PartNumber = null;
+        createModel.QuantityInStock = 0;
+        createModel.QuantityAllocated = 0;
+        createModel.QuantityOnOrder = 0;
+        createModel.FreeStock = 0;
+        createModel.Barcode = null;
+        createModel.CostPrice = 0;
+        createModel.BasePrice = 0;
+        createModel.IsActive = true;
+    }
+
+    private async Task OpenAddProductDialogAsync()
+    {
+        ResetCreateModel();
+        createErrorMessage = null;
+        await Js.InvokeVoidAsync("orderForgeDialog.showModal", _addProductDialog);
+        focusSkuAfterRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CloseAddProductDialogUiAsync()
+    {
+        await Js.InvokeVoidAsync("orderForgeDialog.close", _addProductDialog);
+        if (_searchBar is not null)
+        {
+            await _searchBar.FocusAddProductButtonAsync();
+        }
+    }
+
+    private async Task DismissAddProductDialogAsync()
+    {
+        ResetCreateModel();
+        createErrorMessage = null;
+        await CloseAddProductDialogUiAsync();
+    }
+
+    private async Task OnAddProductDialogCancelAsync()
+    {
+        ResetCreateModel();
+        createErrorMessage = null;
+        if (_searchBar is not null)
+        {
+            await _searchBar.FocusAddProductButtonAsync();
+        }
+    }
+
+    private Task OnAddProductDialogBackdropAsync(MouseEventArgs _) => DismissAddProductDialogAsync();
+
     private async Task OnCreateSubmitAsync()
     {
         createErrorMessage = null;
@@ -103,25 +181,10 @@ public partial class Index
         try
         {
             await AdminApi.CreateProductAsync(createModel);
-            createModel.Sku = string.Empty;
-            createModel.ProductCode = string.Empty;
-            createModel.Name = string.Empty;
-            createModel.ShortDescription = null;
-            createModel.Description = null;
-            createModel.Brand = null;
-            createModel.CommodityCodeDescription = null;
-            createModel.SupplierAccountCode = null;
-            createModel.PartNumber = null;
-            createModel.QuantityInStock = 0;
-            createModel.QuantityAllocated = 0;
-            createModel.QuantityOnOrder = 0;
-            createModel.FreeStock = 0;
-            createModel.Barcode = null;
-            createModel.CostPrice = 0;
-            createModel.BasePrice = 0;
-            createModel.IsActive = true;
+            ResetCreateModel();
             page = 1;
             await LoadAsync();
+            await CloseAddProductDialogUiAsync();
         }
         catch (Exception ex)
         {
@@ -135,7 +198,7 @@ public partial class Index
 
     private async Task DeleteAsync(ProductDto row)
     {
-        if (!await Js.InvokeAsync<bool>("confirm", $"Delete product \"{row.Name}\" (SKU {row.Sku})?"))
+        if (!await Js.InvokeAsync<bool>("confirm", new object[] { $"Delete product \"{row.Name}\" (SKU {row.Sku})?" }))
         {
             return;
         }

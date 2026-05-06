@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace OrderForge.Client.Models;
 
 public sealed class CreateCustomerCompanyRequest
@@ -113,41 +115,79 @@ public sealed class ProductDto
     public string CreatedBy { get; set; } = string.Empty;
 }
 
+/// <summary>Client request for creating a product. Validation mirrors <c>CreateProductCommandValidator</c> on the API.</summary>
 public sealed class CreateProductRequest
 {
+    [Required]
+    [MaxLength(100)]
     public string Sku { get; set; } = string.Empty;
 
+    [Required]
+    [MaxLength(100)]
     public string ProductCode { get; set; } = string.Empty;
 
+    [Required]
+    [MaxLength(300)]
     public string Name { get; set; } = string.Empty;
 
-    public string? ShortDescription { get; set; }
+    [Required]
+    [MaxLength(500)]
+    public string ShortDescription { get; set; } = string.Empty;
 
+    [MaxLength(20000)]
     public string? Description { get; set; }
 
+    [MaxLength(200)]
     public string? Brand { get; set; }
 
+    [MaxLength(100)]
     public string? CommodityCodeDescription { get; set; }
 
+    [MaxLength(50)]
     public string? SupplierAccountCode { get; set; }
 
+    [MaxLength(100)]
     public string? PartNumber { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal QuantityInStock { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal QuantityAllocated { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal QuantityOnOrder { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal FreeStock { get; set; }
 
+    [MaxLength(64)]
     public string? Barcode { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal CostPrice { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal BasePrice { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>Trims string fields and clears optional values that are empty after trim (matches API normalization).</summary>
+    public void NormalizeStringsForCreate()
+    {
+        Sku = Sku.Trim();
+        ProductCode = ProductCode.Trim();
+        Name = Name.Trim();
+        ShortDescription = ShortDescription.Trim();
+        Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim();
+        Brand = string.IsNullOrWhiteSpace(Brand) ? null : Brand.Trim();
+        CommodityCodeDescription = string.IsNullOrWhiteSpace(CommodityCodeDescription)
+            ? null
+            : CommodityCodeDescription.Trim();
+        SupplierAccountCode = string.IsNullOrWhiteSpace(SupplierAccountCode) ? null : SupplierAccountCode.Trim();
+        PartNumber = string.IsNullOrWhiteSpace(PartNumber) ? null : PartNumber.Trim();
+        Barcode = string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim();
+    }
 }
 
 public sealed class AdminUserRow

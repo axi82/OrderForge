@@ -2,6 +2,8 @@
 @attribute [Authorize(Policy = AuthorizationPolicies.SupplierStaff)]
 @inject IAdminApiClient AdminApi
 @inject IJSRuntime Js
+@inject IAuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Products (admin)</PageTitle>
 
@@ -12,20 +14,35 @@
     </div>
 </div>
 
-<AuthorizeView Policy="@AuthorizationPolicies.SupplierAdmin">
-    <Authorized Context="supplierAdminAuth">
-        <AdminProductCreateForm
-            Model="@createModel"
-            ErrorMessage="@createErrorMessage"
-            Saving="@saving"
-            OnValidSubmit="@OnCreateSubmitAsync" />
-    </Authorized>
-</AuthorizeView>
+@if (isSupplierAdmin)
+{
+    <dialog @ref="_addProductDialog"
+            class="w-[min(100%,42rem)] max-w-full rounded-xl border-0 bg-transparent p-0 shadow-none backdrop:bg-black/40"
+            @oncancel="OnAddProductDialogCancelAsync"
+            @onclick="OnAddProductDialogBackdropAsync">
+        <div class="flex max-h-[min(90dvh,48rem)] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl" @onclick:stopPropagation="true">
+            <div class="border-b border-gray-200 bg-gray-50 px-4 py-3 font-medium text-gray-900">
+                Add product
+            </div>
+            <div class="overflow-y-auto p-4">
+                <AdminProductCreateForm
+                    Model="@createModel"
+                    ErrorMessage="@createErrorMessage"
+                    Saving="@saving"
+                    OnValidSubmit="@OnCreateSubmitAsync"
+                    OnCancel="@DismissAddProductDialogAsync" />
+            </div>
+        </div>
+    </dialog>
+}
 
 <AdminProductSearchBar
+    @ref="_searchBar"
     @bind-SearchText="searchText"
     Loading="@loading"
-    OnSearch="@ApplySearchAsync" />
+    OnSearch="@ApplySearchAsync"
+    ShowAddProduct="@isSupplierAdmin"
+    OnAddProduct="@OpenAddProductDialogAsync" />
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {

@@ -32,7 +32,7 @@ public sealed class CreateProductCommandValidator : AbstractValidator<CreateProd
         RuleFor(x => x.Sku).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ProductCode).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Name).NotEmpty().MaximumLength(300);
-        RuleFor(x => x.ShortDescription).MaximumLength(500);
+        RuleFor(x => x.ShortDescription).NotEmpty().MaximumLength(500);
         RuleFor(x => x.Description).MaximumLength(20000);
         RuleFor(x => x.Brand).MaximumLength(200);
         RuleFor(x => x.CommodityCodeDescription).MaximumLength(100);
@@ -77,9 +77,7 @@ public sealed class CreateProductCommandHandler(
             Sku = sku,
             ProductCode = productCode,
             Name = request.Name.Trim(),
-            ShortDescription = string.IsNullOrWhiteSpace(request.ShortDescription)
-                ? null
-                : request.ShortDescription.Trim(),
+            ShortDescription = (request.ShortDescription ?? string.Empty).Trim(),
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             Brand = string.IsNullOrWhiteSpace(request.Brand) ? null : request.Brand.Trim(),
             CommodityCodeDescription = string.IsNullOrWhiteSpace(request.CommodityCodeDescription)
