@@ -15,6 +15,13 @@
 * Deployment: Docker + Dokploy on Hostinger
 * Logging: Serilog with Seq as the primary log server/dashboard
 
+## Image storage & CDN (Bunny.net)
+
+* **Bunny.net** is the image storage provider for product and other images delivered via CDN.
+* Public image URLs use the custom hostname **`images.orderforge.co.uk`**.
+* That hostname is configured as a **CNAME** to Bunny’s pull zone: **`orderforge-images.b-cdn.net.`** (the trailing dot is the DNS FQDN form; do not include it in HTTP `Host` headers or browser URLs).
+* Repository location for Bunny-specific static assets (for example the custom HTML shown when a stored object is missing) is **`cdn/bunny/`**.
+
 ## Development Workflow
 
 * Default local development mode must separate infrastructure from application services.
