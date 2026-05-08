@@ -1,6 +1,23 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace OrderForge.Client.Models;
+
+public static class AdminProductImageLimits
+{
+    public const long MaxBytesPerImage = 15 * 1024 * 1024;
+
+    public const int MaxImages = 20;
+}
+
+public sealed class AdminProductSubmitPayload
+{
+    public CreateProductRequest Model { get; init; } = default!;
+
+    public IReadOnlyList<IBrowserFile> ImageFiles { get; init; } = [];
+
+    public int? MainImageIndex { get; init; }
+}
 
 public sealed class CreateCustomerCompanyRequest
 {
@@ -113,6 +130,19 @@ public sealed class ProductDto
     public DateTime UpdatedAt { get; set; }
 
     public string CreatedBy { get; set; } = string.Empty;
+
+    public List<ProductImageDto> Images { get; set; } = [];
+}
+
+public sealed class ProductImageDto
+{
+    public int Id { get; set; }
+
+    public string Url { get; set; } = string.Empty;
+
+    public int SortOrder { get; set; }
+
+    public bool IsMain { get; set; }
 }
 
 /// <summary>Client request for creating a product. Validation mirrors <c>CreateProductCommandValidator</c> on the API.</summary>

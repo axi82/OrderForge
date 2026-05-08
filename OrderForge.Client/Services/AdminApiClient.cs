@@ -1,5 +1,9 @@
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.Forms;
 using OrderForge.Client.Models;
 
 namespace OrderForge.Client.Services;
@@ -26,6 +30,12 @@ public interface IAdminApiClient
 
     Task<ProductDto> CreateProductAsync(
         CreateProductRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductDto> CreateProductWithImagesAsync(
+        CreateProductRequest request,
+        IReadOnlyList<IBrowserFile> imageFiles,
+        int? mainImageIndex,
         CancellationToken cancellationToken = default);
 
     Task DeleteProductAsync(int productId, CancellationToken cancellationToken = default);
@@ -109,6 +119,44 @@ public sealed class AdminApiClient(HttpClient http) : IAdminApiClient
         CancellationToken cancellationToken = default)
     {
         var response = await http.PostAsJsonAsync("api/admin/products", request, JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        var created = await response.Content.ReadFromJsonAsync<ProductDto>(JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        return created ?? throw new InvalidOperationException("API returned an empty body.");
+    }
+
+    public async Task<ProductDto> CreateProductWithImagesAsync(
+        CreateProductRequest request,
+        IReadOnlyList<IBrowserFile> imageFiles,
+        int? mainImageIndex,
+        CancellationToken cancellationToken = default)
+    {
+        var productJson = JsonSerializer.Serialize(request, JsonOptions);
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(productJson, Encoding.UTF8, "application/json"), "product");
+
+        if (mainImageIndex.HasValue)
+        {
+            form.Add(
+                new StringContent(mainImageIndex.Value.ToString(CultureInfo.InvariantCulture), Encoding.UTF8),
+                "mainImageIndex");
+        }
+
+        foreach (var file in imageFiles)
+        {
+            var stream = file.OpenReadStream(AdminProductImageLimits.MaxBytesPerImage, cancellationToken);
+            var part = new StreamContent(stream);
+            if (!string.IsNullOrWhiteSpace(file.ContentType))
+            {
+                part.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
+            }
+
+            form.Add(part, "images", file.Name);
+        }
+
+        var response = await http
+            .PostAsync("api/admin/products/with-images", form, cancellationToken)
             .ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         var created = await response.Content.ReadFromJsonAsync<ProductDto>(JsonOptions, cancellationToken)

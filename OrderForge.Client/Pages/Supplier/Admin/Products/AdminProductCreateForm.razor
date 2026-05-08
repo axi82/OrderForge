@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.Forms
+@using OrderForge.Client.Models
 
 <div>
     @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -108,6 +109,39 @@
                     Active
                 </label>
             </div>
+            <div class="w-full px-2">
+                <label class="mb-1 block text-sm font-medium text-gray-700">Product images</label>
+                <InputFile
+                    OnChange="@OnImagesSelectedAsync"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50 disabled:opacity-50"
+                    disabled="@Saving" />
+                <p class="mt-1 text-xs text-gray-500">
+                    Optional. Up to @AdminProductImageLimits.MaxImages files, @((AdminProductImageLimits.MaxBytesPerImage / (1024 * 1024)))&nbsp;MB each (JPEG, PNG, WebP).
+                </p>
+                @if (selectedFiles.Count > 0)
+                {
+                    <p class="mt-2 text-sm font-medium text-gray-800">Main image</p>
+                    <ul class="mt-1 space-y-1">
+                        @for (var i = 0; i < selectedFiles.Count; i++)
+                        {
+                            var idx = i;
+                            var file = selectedFiles[i];
+                            <li class="flex items-center gap-2 text-sm text-gray-700">
+                                <input
+                                    type="radio"
+                                    class="h-4 w-4 border-gray-300 text-primary focus:ring-primary/40"
+                                    name="admin-product-main-image"
+                                    checked="@(mainImageIndex == idx)"
+                                    disabled="@Saving"
+                                    @onchange="@(() => OnMainImageChanged(idx))" />
+                                <span class="truncate">@file.Name</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-2">
             <button
@@ -139,10 +173,26 @@
     public bool Saving { get; set; }
 
     [Parameter]
-    public EventCallback OnValidSubmit { get; set; }
+    public EventCallback<AdminProductSubmitPayload> OnValidSubmit { get; set; }
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
+
+    private readonly List<IBrowserFile> selectedFiles = [];
+    private int mainImageIndex;
+
+    private Task OnImagesSelectedAsync(InputFileChangeEventArgs e)
+    {
+        selectedFiles.Clear();
+        selectedFiles.AddRange(e.GetMultipleFiles(AdminProductImageLimits.MaxImages));
+        mainImageIndex = 0;
+        return Task.CompletedTask;
+    }
+
+    private void OnMainImageChanged(int index)
+    {
+        mainImageIndex = index;
+    }
 
     private async Task HandleSubmitAsync(EditContext editContext)
     {
@@ -150,7 +200,13 @@
         await InvokeAsync(StateHasChanged);
         if (editContext.Validate())
         {
-            await OnValidSubmit.InvokeAsync();
+            var payload = new AdminProductSubmitPayload
+            {
+                Model = Model,
+                ImageFiles = selectedFiles.ToList(),
+                MainImageIndex = selectedFiles.Count == 0 ? null : mainImageIndex
+            };
+            await OnValidSubmit.InvokeAsync(payload);
         }
     }
 

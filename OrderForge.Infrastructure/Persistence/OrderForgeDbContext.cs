@@ -18,6 +18,8 @@ public class OrderForgeDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
 
+    public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+
     public DbSet<TradeOrder> TradeOrders => Set<TradeOrder>();
 
     public DbSet<TradeOrderLine> TradeOrderLines => Set<TradeOrderLine>();

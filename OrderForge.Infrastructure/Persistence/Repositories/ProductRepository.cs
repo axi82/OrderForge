@@ -7,6 +7,15 @@ namespace OrderForge.Infrastructure.Persistence.Repositories;
 public sealed class ProductRepository(OrderForgeDbContext dbContext)
     : EfRepository<Product>(dbContext), IProductRepository
 {
+    public async Task<Product?> GetByIdWithImagesAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await DbContext
+            .Set<Product>()
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<bool> ExistsWithSkuAsync(string sku, CancellationToken cancellationToken = default)
     {
         var normalized = sku.Trim();
@@ -69,6 +78,7 @@ public sealed class ProductRepository(OrderForgeDbContext dbContext)
         var total = await query.CountAsync(cancellationToken);
 
         var items = await query
+            .Include(p => p.Images)
             .OrderBy(p => p.Sku)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

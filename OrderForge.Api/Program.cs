@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,12 @@ try
             loggerConfiguration.WriteTo.Seq(seqUrl);
         }
     });
+
+    builder.Services.Configure<FormOptions>(options =>
+        options.MultipartBodyLengthLimit = 100 * 1024 * 1024);
+
+    builder.WebHost.ConfigureKestrel(options =>
+        options.Limits.MaxRequestBodySize = 100 * 1024 * 1024);
 
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();

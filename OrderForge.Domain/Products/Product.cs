@@ -46,4 +46,6 @@ public class Product
 
     /// <summary>Keycloak user id (sub) of the creator.</summary>
     public string CreatedBy { get; set; } = string.Empty;
+
+    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
 }

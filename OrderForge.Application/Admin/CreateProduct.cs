@@ -124,6 +124,7 @@ public sealed class CreateProductCommandHandler(
             entity.IsActive,
             entity.CreatedAt,
             entity.UpdatedAt,
-            entity.CreatedBy);
+            entity.CreatedBy,
+            []);
     }
 }

@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using OrderForge.Application.Common;
 using OrderForge.Application.Products;
+using OrderForge.Application.Storage;
 using OrderForge.Domain.Products;
 
 namespace OrderForge.Application.Admin;
@@ -28,7 +29,8 @@ public sealed class GetAdminProductsQueryValidator : AbstractValidator<GetAdminP
 
 public sealed class GetAdminProductsQueryHandler(
     IProductRepository products,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IBunnyObjectStorage bunnyObjectStorage)
     : IRequestHandler<GetAdminProductsQuery, AdminProductsListResponse>
 {
     public async Task<AdminProductsListResponse> Handle(
@@ -44,31 +46,7 @@ public sealed class GetAdminProductsQueryHandler(
             .GetPagedAsync(request.Page, request.PageSize, request.Search, cancellationToken)
             .ConfigureAwait(false);
 
-        var dtos = items.Select(ToDto).ToList();
+        var dtos = items.Select(p => p.ToProductDto(bunnyObjectStorage)).ToList();
         return new AdminProductsListResponse(dtos, request.Page, request.PageSize, total, request.Search);
     }
-
-    private static ProductDto ToDto(Product p) =>
-        new(
-            p.Id,
-            p.Sku,
-            p.ProductCode,
-            p.Name,
-            p.ShortDescription,
-            p.Description,
-            p.Brand,
-            p.CommodityCodeDescription,
-            p.SupplierAccountCode,
-            p.PartNumber,
-            p.QuantityInStock,
-            p.QuantityAllocated,
-            p.QuantityOnOrder,
-            p.FreeStock,
-            p.Barcode,
-            p.CostPrice,
-            p.BasePrice,
-            p.IsActive,
-            p.CreatedAt,
-            p.UpdatedAt,
-            p.CreatedBy);
 }

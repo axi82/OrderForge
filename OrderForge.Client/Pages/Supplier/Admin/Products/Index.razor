@@ -26,6 +26,7 @@
             </div>
             <div class="overflow-y-auto p-4">
                 <AdminProductCreateForm
+                    @key="addProductFormKey"
                     Model="@createModel"
                     ErrorMessage="@createErrorMessage"
                     Saving="@saving"

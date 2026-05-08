@@ -21,4 +21,5 @@ public sealed record ProductDto(
     bool IsActive,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    string CreatedBy);
+    string CreatedBy,
+    IReadOnlyList<ProductImageDto> Images);

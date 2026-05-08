@@ -5,6 +5,8 @@ namespace OrderForge.Application.Products;
 
 public interface IProductRepository : IRepository<Product>
 {
+    Task<Product?> GetByIdWithImagesAsync(int id, CancellationToken cancellationToken = default);
+
     Task<bool> ExistsWithSkuAsync(string sku, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsWithProductCodeAsync(string productCode, CancellationToken cancellationToken = default);

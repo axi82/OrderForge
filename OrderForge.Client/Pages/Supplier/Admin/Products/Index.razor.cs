@@ -27,6 +27,7 @@ public partial class Index
     private AdminProductSearchBar? _searchBar;
     private bool isSupplierAdmin;
     private bool focusSkuAfterRender;
+    private int addProductFormKey;
 
     private int MaxPage => result is null || result.TotalCount == 0
         ? 1
@@ -139,6 +140,7 @@ public partial class Index
 
     private async Task OpenAddProductDialogAsync()
     {
+        addProductFormKey++;
         ResetCreateModel();
         createErrorMessage = null;
         await Js.InvokeVoidAsync("orderForgeDialog.showModal", _addProductDialog);
@@ -174,13 +176,16 @@ public partial class Index
 
     private Task OnAddProductDialogBackdropAsync(MouseEventArgs _) => DismissAddProductDialogAsync();
 
-    private async Task OnCreateSubmitAsync()
+    private async Task OnCreateSubmitAsync(AdminProductSubmitPayload payload)
     {
         createErrorMessage = null;
         saving = true;
         try
         {
-            await AdminApi.CreateProductAsync(createModel);
+            await AdminApi.CreateProductWithImagesAsync(
+                payload.Model,
+                payload.ImageFiles,
+                payload.MainImageIndex);
             ResetCreateModel();
             page = 1;
             await LoadAsync();

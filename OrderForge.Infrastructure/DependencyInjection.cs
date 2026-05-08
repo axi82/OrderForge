@@ -10,8 +10,10 @@ using OrderForge.Application.Products;
 using OrderForge.Domain.Organisations;
 using OrderForge.Domain.Products;
 using OrderForge.Infrastructure.Keycloak;
+using OrderForge.Application.Storage;
 using OrderForge.Infrastructure.Persistence;
 using OrderForge.Infrastructure.Persistence.Repositories;
+using OrderForge.Infrastructure.Storage;
 
 namespace OrderForge.Infrastructure;
 
@@ -54,6 +56,9 @@ public static class DependencyInjection
             });
         services.AddScoped<IKeycloakAdminService, KeycloakAdminService>();
         services.AddScoped<IKeycloakUserPasswordValidator, KeycloakUserPasswordValidator>();
+
+        services.Configure<BunnyStorageOptions>(configuration.GetSection(BunnyStorageOptions.SectionName));
+        services.AddScoped<IBunnyObjectStorage, BunnyObjectStorage>();
 
         return services;
     }
