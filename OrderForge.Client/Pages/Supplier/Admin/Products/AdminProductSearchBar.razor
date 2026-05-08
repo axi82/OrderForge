@@ -6,6 +6,7 @@
                    class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                    value="@SearchText"
                    @oninput="OnSearchInputAsync"
+                   @onkeydown="OnSearchKeyDownAsync"
                    placeholder="SKU, product code, name, part no., barcode…"
                    disabled="@Loading" />
         </div>
@@ -53,6 +54,16 @@
 
     private Task OnSearchInputAsync(ChangeEventArgs e) =>
         SearchTextChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+
+    private async Task OnSearchKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (Loading || !string.Equals(e.Key, "Enter", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await SearchAsync();
+    }
 
     private Task SearchAsync() => OnSearch.InvokeAsync();
 
