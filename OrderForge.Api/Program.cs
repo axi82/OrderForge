@@ -39,10 +39,10 @@ try
             .ReadFrom.Services(services)
             .Enrich.FromLogContext();
 
-        var seqUrl = context.Configuration["Seq:ServerUrl"];
-        if (!string.IsNullOrWhiteSpace(seqUrl))
+        var betterStackToken = context.Configuration["BetterStack:SourceToken"];
+        if (!string.IsNullOrWhiteSpace(betterStackToken))
         {
-            loggerConfiguration.WriteTo.Seq(seqUrl);
+            loggerConfiguration.WriteTo.BetterStack(betterStackToken);
         }
     });
 
@@ -206,13 +206,14 @@ try
     app.UseExceptionHandler();
     app.UseMiddleware<CorrelationIdMiddleware>();
 
-    if (runUnderAspire || app.Environment.IsDevelopment())
+    var isNonProduction = runUnderAspire || app.Environment.IsDevelopment() || app.Environment.IsStaging();
+
+    if (isNonProduction)
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderForgeDbContext>();
         await db.Database.MigrateAsync();
         var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DevelopmentSeed");
-        // Sample product CSV: Development *or* local Aspire (API often runs as Production when launchProfile is null).
         await DevelopmentDataSeeder.SeedAsync(
             db,
             importDevelopmentProductCsv: runUnderAspire || app.Environment.IsDevelopment(),

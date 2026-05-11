@@ -15,5 +15,8 @@ RUN dotnet publish OrderForge.Client/OrderForge.Client.csproj -c Release -o /app
 
 FROM nginx:1.27-alpine AS final
 COPY OrderForge.Client/nginx.conf /etc/nginx/nginx.conf
+COPY OrderForge.Client/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint.sh"]

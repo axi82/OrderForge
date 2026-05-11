@@ -786,12 +786,14 @@
       "redirectUris": [
         "http://localhost:4200/*",
         "https://localhost:7245/*",
-        "http://localhost:5201/*"
+        "http://localhost:5201/*",
+        "https://app.orderforge.co.uk/*"
       ],
       "webOrigins": [
         "https://localhost:7245",
         "http://localhost:5201",
-        "http://localhost:4200"
+        "http://localhost:4200",
+        "https://app.orderforge.co.uk"
       ],
       "notBefore": 0,
       "bearerOnly": false,

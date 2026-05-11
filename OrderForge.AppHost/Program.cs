@@ -15,15 +15,6 @@ var postgres = builder.AddPostgres("postgres", postgresUser, postgresPassword, p
 
 var orderforgeDb = postgres.AddDatabase("orderforge");
 
-// Seq: persist /data so the admin user and password survive container recreation.
-// Default login is username "admin" and this password (override via user secrets / Aspire parameters UI).
-var seqAdminPassword = builder.AddParameter("seq-admin-password", "dev-seq-admin-change-me", secret: true);
-var seq = builder
-    .AddSeq("seq", seqAdminPassword)
-    .WithDataVolume("orderforge-seq-data")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .ExcludeFromManifest();
-
 // Keycloak 26+ bootstraps a temporary master-realm admin; first login shows "Update Password" by design.
 // Persist /opt/keycloak/data so after you submit that form once, restarts reuse the same admin (no repeat prompt).
 // Credentials match docker-compose (KC_BOOTSTRAP_*); KEYCLOAK_* is still set by AddKeycloakContainer from parameters.
@@ -74,9 +65,7 @@ var api = builder
     .WithReference(orderforgeDb)
     .WithReference(orderforgeRealm)
     .WaitFor(orderforgeDb)
-    .WaitFor(seq)
     .WaitFor(keycloak)
-    .WithEnvironment("Seq__ServerUrl", seq.GetEndpoint("http"))
     .WithEnvironment("Authentication__Authority", $"{keycloak.GetEndpoint("http")}/realms/{keycloakRealmName}")
     .WithEnvironment("Authentication__Audience", "orderforge-api")
     .WithEnvironment("KeycloakAdmin__BaseUrl", $"{keycloak.GetEndpoint("http")}")
